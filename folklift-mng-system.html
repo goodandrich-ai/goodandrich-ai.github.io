@@ -1,0 +1,2838 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบจัดการรถโฟร์คลิฟท์เช่า</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --surface3: #243048;
+    --border: #2a3a55;
+    --accent: #f59e0b;
+    --accent2: #3b82f6;
+    --accent3: #10b981;
+    --danger: #ef4444;
+    --warning: #f97316;
+    --text: #e2e8f0;
+    --text-muted: #7b91b0;
+    --text-dim: #4a6080;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #0d1929 0%, #1a2a45 50%, #0d1929 100%);
+    border-bottom: 2px solid var(--accent);
+    padding: 0 2rem;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 4px 30px rgba(245,158,11,0.15);
+  }
+  .header-inner {
+    max-width: 1600px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 70px;
+  }
+  .logo { display: flex; align-items: center; gap: 14px; }
+  .logo-icon {
+    width: 46px; height: 46px;
+    background: linear-gradient(135deg, var(--accent), #d97706);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 0 20px rgba(245,158,11,0.4);
+  }
+  .logo-text { line-height: 1.1; }
+  .logo-title { font-size: 1.2rem; font-weight: 800; color: var(--accent); letter-spacing: 0.5px; }
+  .logo-sub { font-size: 0.72rem; color: var(--text-muted); font-weight: 400; }
+
+  .header-stats { display: flex; gap: 1.5rem; }
+  .stat-pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 16px;
+    text-align: center;
+    min-width: 90px;
+  }
+  .stat-pill .val { font-size: 1.3rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
+  .stat-pill .lbl { font-size: 0.65rem; color: var(--text-muted); }
+  .stat-pill.alert .val { color: var(--danger); }
+  .stat-pill.warning .val { color: var(--warning); }
+  .stat-pill.active .val { color: var(--accent3); }
+  .stat-pill.total .val { color: var(--accent2); }
+
+  /* TABS */
+  .tabs-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+  }
+  .tabs-inner { max-width: 1600px; margin: 0 auto; display: flex; gap: 0; }
+  .tab {
+    padding: 14px 22px;
+    font-size: 0.88rem; font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 8px;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--text); background: var(--surface2); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab .badge {
+    background: var(--danger);
+    color: #fff;
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 0.68rem;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* MAIN */
+  .main { max-width: 1600px; margin: 0 auto; padding: 2rem; }
+
+  /* SECTION */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ALERT BANNER */
+  .alert-banner {
+    background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05));
+    border: 1px solid rgba(239,68,68,0.4);
+    border-left: 4px solid var(--danger);
+    border-radius: 10px;
+    padding: 14px 20px;
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .alert-banner .icon { font-size: 1.4rem; flex-shrink: 0; }
+  .alert-banner .msg { flex: 1; }
+  .alert-banner .msg strong { color: var(--danger); font-size: 0.95rem; }
+  .alert-banner .msg p { font-size: 0.82rem; color: var(--text-muted); margin-top: 3px; }
+
+  /* CARDS ROW */
+  .cards-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .summary-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .summary-card.c1::before { background: var(--accent2); }
+  .summary-card.c2::before { background: var(--accent3); }
+  .summary-card.c3::before { background: var(--warning); }
+  .summary-card.c4::before { background: var(--danger); }
+  .card-label { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; margin-bottom: 6px; }
+  .card-value { font-size: 2rem; font-weight: 800; font-family: 'IBM Plex Mono', monospace; }
+  .c1 .card-value { color: var(--accent2); }
+  .c2 .card-value { color: var(--accent3); }
+  .c3 .card-value { color: var(--warning); }
+  .c4 .card-value { color: var(--danger); }
+  .card-sub { font-size: 0.75rem; color: var(--text-dim); margin-top: 4px; }
+
+  /* TOOLBAR */
+  .toolbar {
+    display: flex; gap: 12px; align-items: center;
+    margin-bottom: 1.2rem;
+    flex-wrap: wrap;
+  }
+  .search-box {
+    flex: 1; min-width: 200px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 14px 9px 36px;
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 0.88rem;
+    position: relative;
+    outline: none;
+    transition: border 0.2s;
+  }
+  .search-box:focus { border-color: var(--accent2); }
+  .search-wrap { position: relative; flex: 1; min-width: 200px; }
+  .search-wrap::before {
+    content: '🔍';
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    font-size: 0.85rem;
+    pointer-events: none;
+  }
+  select.filter-sel {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 14px;
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 0.88rem;
+    outline: none;
+    cursor: pointer;
+  }
+  select.filter-sel:focus { border-color: var(--accent2); }
+
+  .btn {
+    padding: 9px 18px;
+    border-radius: 8px;
+    border: none;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 7px;
+    white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #d97706; transform: translateY(-1px); box-shadow: 0 4px 15px rgba(245,158,11,0.3); }
+  .btn-secondary { background: var(--surface3); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--surface2); }
+  .btn-danger { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+  .btn-danger:hover { background: rgba(239,68,68,0.25); }
+  .btn-sm { padding: 5px 12px; font-size: 0.78rem; }
+  .btn-success { background: rgba(16,185,129,0.15); color: var(--accent3); border: 1px solid rgba(16,185,129,0.3); }
+  .btn-success:hover { background: rgba(16,185,129,0.25); }
+
+  /* TABLE */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    overflow-x: auto;
+  }
+  table { width: 100%; border-collapse: collapse; min-width: 900px; }
+  thead tr { background: var(--surface2); }
+  thead th {
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody td {
+    padding: 11px 14px;
+    font-size: 0.85rem;
+    vertical-align: middle;
+  }
+  .td-mono { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; }
+
+  /* STATUS BADGE */
+  .badge-status {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .badge-status::before { content: '●'; font-size: 0.5rem; }
+  .s-active { background: rgba(16,185,129,0.15); color: var(--accent3); }
+  .s-overdue { background: rgba(239,68,68,0.15); color: var(--danger); }
+  .s-due-soon { background: rgba(249,115,22,0.15); color: var(--warning); }
+  .s-returned { background: rgba(100,116,139,0.15); color: #94a3b8; }
+
+  /* RENTAL TYPE */
+  .rtype {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .rt-daily { background: rgba(59,130,246,0.15); color: var(--accent2); }
+  .rt-monthly { background: rgba(245,158,11,0.15); color: var(--accent); }
+  .rt-yearly { background: rgba(16,185,129,0.15); color: var(--accent3); }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 1000;
+    align-items: center; justify-content: center;
+    padding: 1rem;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 100%; max-width: 760px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0;
+    background: var(--surface);
+    z-index: 1;
+  }
+  .modal-title { font-size: 1.1rem; font-weight: 700; }
+  .modal-close {
+    background: var(--surface3);
+    border: none;
+    color: var(--text-muted);
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .modal-close:hover { background: var(--danger); color: #fff; }
+  .modal-body { padding: 24px; }
+  .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: flex-end; gap: 10px;
+  }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.span-2 { grid-column: span 2; }
+  .form-group.span-3 { grid-column: span 3; }
+  label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+  label .required { color: var(--danger); margin-left: 3px; }
+  input, select, textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 0.88rem;
+    outline: none;
+    transition: border 0.2s;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent2); }
+  textarea { resize: vertical; min-height: 70px; }
+  .section-divider {
+    grid-column: 1/-1;
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 4px 0;
+    position: relative;
+  }
+  .section-divider span {
+    position: absolute; top: -10px; left: 0;
+    background: var(--surface);
+    padding: 0 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* DETAIL VIEW */
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .detail-section { background: var(--surface2); border-radius: 10px; padding: 18px; }
+  .detail-section h4 { font-size: 0.78rem; color: var(--text-muted); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 14px; }
+  .detail-row { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .dk { font-size: 0.8rem; color: var(--text-muted); }
+  .detail-row .dv { font-size: 0.88rem; font-weight: 600; text-align: right; }
+
+  /* NOTIFICATION LIST */
+  .notif-list { display: flex; flex-direction: column; gap: 10px; }
+  .notif-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex; align-items: center; gap: 14px;
+    transition: all 0.2s;
+  }
+  .notif-item:hover { border-color: var(--accent2); }
+  .notif-icon {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+  }
+  .ni-overdue .notif-icon { background: rgba(239,68,68,0.15); }
+  .ni-duesoon .notif-icon { background: rgba(249,115,22,0.15); }
+  .ni-info .notif-icon { background: rgba(59,130,246,0.15); }
+  .notif-content { flex: 1; }
+  .notif-content .ntitle { font-size: 0.9rem; font-weight: 700; }
+  .notif-content .ndesc { font-size: 0.8rem; color: var(--text-muted); margin-top: 3px; }
+  .notif-time { font-size: 0.75rem; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; text-align: right; flex-shrink: 0; }
+
+  /* FORKLIFT TRACKER */
+  .fkl-search-wrap {
+    display: flex; gap: 12px; align-items: center;
+    margin-bottom: 1.5rem; flex-wrap: wrap;
+  }
+  .fkl-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+  .fkl-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .fkl-card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+  .fkl-card-head {
+    padding: 16px 18px 12px;
+    display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .fkl-num-badge {
+    background: linear-gradient(135deg, var(--accent), #d97706);
+    color: #000;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1rem; font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    box-shadow: 0 2px 10px rgba(245,158,11,0.3);
+  }
+  .fkl-num-badge.fkl-free {
+    background: linear-gradient(135deg, var(--accent3), #059669);
+    box-shadow: 0 2px 10px rgba(16,185,129,0.3);
+  }
+  .fkl-num-badge.fkl-overdue {
+    background: linear-gradient(135deg, var(--danger), #b91c1c);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(239,68,68,0.3);
+  }
+  .fkl-num-badge.fkl-due-soon {
+    background: linear-gradient(135deg, var(--warning), #c2410c);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(249,115,22,0.3);
+  }
+  .fkl-card-title { flex: 1; }
+  .fkl-card-title .fkl-status-txt { font-size: 0.82rem; font-weight: 700; }
+  .fkl-card-title .fkl-usage { font-size: 0.72rem; color: var(--text-dim); margin-top: 2px; }
+  .fkl-card-body { padding: 14px 18px; }
+  .fkl-row { display: flex; gap: 8px; align-items: flex-start; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.82rem; }
+  .fkl-row:last-child { border-bottom: none; }
+  .fkl-row .fkl-icon { font-size: 0.9rem; flex-shrink: 0; margin-top: 1px; }
+  .fkl-row .fkl-val { flex: 1; color: var(--text); }
+  .fkl-row .fkl-key { color: var(--text-dim); width: 72px; flex-shrink: 0; font-size: 0.74rem; }
+  .fkl-card-foot {
+    padding: 10px 18px;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.75rem;
+  }
+  .fkl-hist-count { color: var(--text-muted); }
+  .fkl-timeline-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    margin-top: 5px;
+  }
+  .fkl-free-card { border-color: rgba(16,185,129,0.3); }
+  .fkl-active-card { border-color: rgba(59,130,246,0.3); }
+  .fkl-overdue-card { border-color: rgba(239,68,68,0.4); }
+  .fkl-due-card { border-color: rgba(249,115,22,0.4); }
+
+  .fkl-filter-bar {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem;
+  }
+  .fkl-chip {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 0.78rem; font-weight: 600;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .fkl-chip:hover { border-color: var(--accent2); color: var(--accent2); }
+  .fkl-chip.active { background: var(--accent); color: #000; border-color: var(--accent); }
+  .fkl-chip.chip-overdue.active { background: var(--danger); color: #fff; border-color: var(--danger); }
+  .fkl-chip.chip-duesoon.active { background: var(--warning); color: #fff; border-color: var(--warning); }
+  .fkl-chip.chip-active.active { background: var(--accent2); color: #fff; border-color: var(--accent2); }
+  .fkl-chip.chip-free.active { background: var(--accent3); color: #fff; border-color: var(--accent3); }
+
+  .fkl-empty { text-align:center; padding: 50px; color: var(--text-dim); }
+  .fkl-empty .icon { font-size: 2.5rem; margin-bottom: 10px; }
+
+  /* FORKLIFT HISTORY MINI */
+  .fkl-hist-list { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+  .fkl-hist-item {
+    background: var(--surface3);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 8px;
+  }
+
+  .fkl-detail-modal .detail-grid { grid-template-columns: 1fr; }
+
+  /* DATE VIEW */
+  .dv-header {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .dv-date-input {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 1rem;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .dv-date-input:focus { outline: none; border-color: var(--accent); }
+  .dv-date-label {
+    font-size: 1rem; font-weight: 700; color: var(--text);
+  }
+  .dv-day-badge {
+    padding: 4px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 700;
+    background: var(--surface3); color: var(--text-muted);
+  }
+  .dv-day-badge.sunday { background: rgba(239,68,68,0.15); color: var(--danger); }
+  .dv-today-btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text-muted); border-radius: 8px; padding: 8px 14px;
+    font-size: 0.8rem; cursor: pointer; transition: all 0.15s;
+  }
+  .dv-today-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .dv-summary-row {
+    display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.5rem;
+  }
+  .dv-sum-card {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 18px; min-width: 120px;
+    text-align: center;
+  }
+  .dv-sum-card .dv-sum-val { font-size: 1.6rem; font-weight: 800; }
+  .dv-sum-card .dv-sum-lbl { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+  .dv-sum-card.active  { border-color: rgba(59,130,246,0.4); }
+  .dv-sum-card.deliver { border-color: rgba(245,158,11,0.4); }
+  .dv-sum-card.ret     { border-color: rgba(16,185,129,0.4); }
+  .dv-sum-card.overlap { border-color: rgba(139,92,246,0.4); }
+
+  .dv-group-title {
+    font-size: 0.75rem; font-weight: 700; color: var(--text-muted);
+    letter-spacing: 1px; text-transform: uppercase;
+    margin: 1.2rem 0 0.6rem; padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .dv-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+    display: flex; gap: 14px; align-items: flex-start;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .dv-card:hover { border-color: var(--accent2); transform: translateX(3px); }
+  .dv-card.dv-deliver { border-left: 3px solid var(--accent); }
+  .dv-card.dv-return  { border-left: 3px solid var(--accent3); }
+  .dv-card.dv-overlap { border-left: 3px solid #8b5cf6; }
+  .dv-card.dv-sunday  { border-left: 3px solid var(--danger); }
+  .dv-card-icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 2px; }
+  .dv-card-body { flex: 1; }
+  .dv-card-company { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+  .dv-card-row { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .dv-card-row span { display: flex; align-items: center; gap: 3px; }
+  .dv-tag {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 0.7rem; font-weight: 700; margin-left: 4px;
+  }
+  .dv-tag-deliver { background: rgba(245,158,11,0.15); color: var(--accent); }
+  .dv-tag-return  { background: rgba(16,185,129,0.15); color: var(--accent3); }
+  .dv-tag-overlap { background: rgba(139,92,246,0.15); color: #a78bfa; }
+  .dv-tag-active  { background: rgba(59,130,246,0.15); color: var(--accent2); }
+  .dv-empty { text-align:center; padding:50px; color:var(--text-dim); }
+  .dv-empty .icon { font-size:2.5rem; margin-bottom:10px; }
+
+  .monthly-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+  .monthly-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .monthly-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+  .mc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .mc-company { font-size: 1rem; font-weight: 700; }
+  .mc-count {
+    background: var(--accent);
+    color: #000;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .mc-details { font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+  }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state p { font-size: 0.88rem; }
+
+  /* TOAST */
+  .toast-container {
+    position: fixed; bottom: 2rem; right: 2rem;
+    z-index: 9999;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .toast {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 0.85rem;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    display: flex; align-items: center; gap: 10px;
+    animation: toastIn 0.3s ease;
+    max-width: 320px;
+  }
+  .toast.success { border-color: var(--accent3); }
+  .toast.warning { border-color: var(--warning); }
+  .toast.error { border-color: var(--danger); }
+  @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(20px); } }
+
+  /* TIMELINE */
+  .timeline { padding: 8px 0; }
+  .tl-item { display: flex; gap: 14px; padding: 10px 0; }
+  .tl-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .tl-line { width: 1px; background: var(--border); margin: 14px auto 0; flex-shrink: 0; align-self: stretch; position: relative; left: -21px; }
+  .tl-text .tt { font-size: 0.85rem; font-weight: 600; }
+  .tl-text .ts { font-size: 0.75rem; color: var(--text-muted); }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .header-stats { display: none; }
+    .form-grid, .form-grid.cols-3, .detail-grid { grid-template-columns: 1fr; }
+    .form-group.span-2, .form-group.span-3 { grid-column: span 1; }
+    .main { padding: 1rem; }
+  }
+
+  .text-accent { color: var(--accent); }
+  .text-green { color: var(--accent3); }
+  .text-red { color: var(--danger); }
+  .text-orange { color: var(--warning); }
+  .text-blue { color: var(--accent2); }
+  .text-muted { color: var(--text-muted); }
+  .fw-bold { font-weight: 700; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  .mt-1 { margin-top: 8px; }
+  .mt-2 { margin-top: 16px; }
+
+  /* ===== STOCK PAGE ===== */
+  .stock-toolbar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 1.5rem;
+  }
+  .stock-filter-chip {
+    padding: 6px 16px; border-radius: 20px; font-size: 0.78rem; font-weight: 700;
+    border: 1.5px solid var(--border); background: var(--surface2); color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .stock-filter-chip.active    { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+  .stock-filter-chip.free      { background: var(--accent3); border-color: var(--accent3); color: #fff; }
+  .stock-filter-chip.busy      { background: var(--danger);  border-color: var(--danger);  color: #fff; }
+  .stock-filter-chip.reserved  { background: #8b5cf6;        border-color: #8b5cf6;        color: #fff; }
+
+  .stock-summary {
+    display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.5rem;
+  }
+  .stock-sum-card {
+    flex: 1; min-width: 110px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px; text-align: center;
+  }
+  .stock-sum-card .sv { font-size: 1.8rem; font-weight: 900; line-height: 1; }
+  .stock-sum-card .sl { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; }
+  .stock-sum-card.s-all  { border-color: rgba(139,92,246,0.35); }
+  .stock-sum-card.s-free     { border-color: rgba(16,185,129,0.35); }
+  .stock-sum-card.s-busy     { border-color: rgba(239,68,68,0.35);  }
+  .stock-sum-card.s-maint    { border-color: rgba(245,158,11,0.35); }
+  .stock-sum-card.s-reserved { border-color: rgba(139,92,246,0.35); }
+
+  .stock-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 14px;
+  }
+  .stock-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    transition: all 0.18s;
+    position: relative;
+    overflow: hidden;
+  }
+  .stock-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+  .stock-card.free     { border-color: rgba(16,185,129,0.5); }
+  .stock-card.busy     { border-color: rgba(239,68,68,0.45); }
+  .stock-card.maint    { border-color: rgba(245,158,11,0.5); }
+  .stock-card.reserved { border-color: rgba(139,92,246,0.5); }
+  .stock-card-header {
+    display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px;
+  }
+  .stock-card-num {
+    font-size: 1.1rem; font-weight: 900; color: var(--accent2); font-family: 'IBM Plex Mono', monospace;
+  }
+  .stock-card-model { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+  .stock-badge-wrap { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .stock-status-badge {
+    padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 800;
+  }
+  .ssb-free     { background: rgba(16,185,129,0.15);  color: var(--accent3); }
+  .ssb-busy     { background: rgba(239,68,68,0.15);   color: var(--danger);  }
+  .ssb-maint    { background: rgba(245,158,11,0.15);  color: var(--accent);  }
+  .ssb-reserved { background: rgba(139,92,246,0.15);  color: #a78bfa;        }
+  .branch-badge {
+    display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 0.65rem; font-weight: 700;
+    background: rgba(59,130,246,0.12); color: var(--accent2); border: 1px solid rgba(59,130,246,0.2);
+  }
+  .stock-fuel-badge {
+    padding: 2px 8px; border-radius: 10px; font-size: 0.65rem; font-weight: 700;
+  }
+  .sfb-electric { background: rgba(59,130,246,0.15);  color: var(--accent2); }
+  .sfb-lpg      { background: rgba(245,158,11,0.12);  color: #d97706; }
+  .sfb-diesel   { background: rgba(107,114,128,0.15); color: #9ca3af; }
+  .sfb-gasoline { background: rgba(16,185,129,0.12);  color: var(--accent3); }
+
+  .stock-specs {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px;
+    margin-bottom: 10px; font-size: 0.78rem;
+  }
+  .stock-spec-item { display: flex; gap: 5px; align-items: center; }
+  .stock-spec-item .sk { color: var(--text-dim); flex-shrink: 0; }
+  .stock-spec-item .sv { color: var(--text); font-weight: 600; }
+
+  .stock-rental-info {
+    background: rgba(239,68,68,0.07);
+    border: 1px solid rgba(239,68,68,0.2);
+    border-radius: 8px; padding: 8px 12px;
+    font-size: 0.77rem; margin-top: 8px;
+  }
+  .stock-rental-info.reserved-info {
+    background: rgba(139,92,246,0.07);
+    border-color: rgba(139,92,246,0.25);
+  }
+  .stock-rental-info .sri-title { font-weight: 700; color: var(--danger); margin-bottom: 4px; }
+  .stock-rental-info.reserved-info .sri-title { color: #a78bfa; }
+  .stock-rental-info .sri-row { color: var(--text-muted); margin-top: 2px; }
+
+  .stock-card-actions {
+    display: flex; gap: 8px; margin-top: 12px; padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .btn-xs {
+    padding: 5px 12px; font-size: 0.75rem; border-radius: 7px;
+    border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-family: inherit;
+  }
+  .btn-xs:hover { border-color: var(--accent2); color: var(--accent2); }
+  .btn-xs.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* STOCK MODAL */
+  .stock-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  @media (max-width: 500px) { .stock-form-grid { grid-template-columns: 1fr; } }
+  .stock-empty { text-align:center; padding:50px; color:var(--text-dim); }
+  .stock-empty .icon { font-size:2.5rem; margin-bottom:10px; }
+
+  /* ========== LOADING OVERLAY ========== */
+  .loading-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(10, 15, 30, 0.85);
+    backdrop-filter: blur(4px);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 18px;
+    transition: opacity 0.25s;
+  }
+  .loading-overlay.hidden { display: none; }
+  .loading-spinner {
+    width: 52px; height: 52px;
+    border: 4px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text {
+    font-size: 0.95rem; color: var(--text-muted);
+    font-weight: 500; letter-spacing: 0.5px;
+  }
+  .loading-sub {
+    font-size: 0.75rem; color: var(--text-dim);
+    margin-top: -10px;
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loadingText">กำลังโหลดข้อมูล...</div>
+  <div class="loading-sub">กำลังเชื่อมต่อ Google Sheets</div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <img src="data:image/png;base64,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" style="width:46px;height:46px;border-radius:50%;object-fit:cover;box-shadow:0 0 18px rgba(245,158,11,0.4);">
+      <div class="logo-text">
+        <div class="logo-title">GOOD &amp; RICH POWERPLUS</div>
+        <div class="logo-sub">ระบบจัดการรถโฟร์คลิฟท์เช่า · ปล่อย-รับคืน</div>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="stat-pill total"><div class="val" id="hstat-total">0</div><div class="lbl">รถทั้งหมด</div></div>
+      <div class="stat-pill active"><div class="val" id="hstat-active">0</div><div class="lbl">กำลังเช่า</div></div>
+      <div class="stat-pill warning"><div class="val" id="hstat-duesoon">0</div><div class="lbl">ครบพรุ่งนี้</div></div>
+      <div class="stat-pill alert"><div class="val" id="hstat-overdue">0</div><div class="lbl">เกินกำหนด</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-bar">
+  <div class="tabs-inner">
+    <div class="tab active" onclick="switchTab('dashboard')">📊 แดชบอร์ด</div>
+    <div class="tab" onclick="switchTab('rentals')">📋 รายการเช่า <span class="badge" id="tab-badge-rentals">0</span></div>
+    <div class="tab" onclick="switchTab('forklift')">🚜 ค้นหาตามเบอร์รถ</div>
+    <div class="tab" onclick="switchTab('dateview')">📆 ค้นหาตามวันที่</div>
+    <div class="tab" onclick="switchTab('notifications')">🔔 การแจ้งเตือน <span class="badge" id="tab-badge-notif">0</span></div>
+    <div class="tab" onclick="switchTab('monthly')">📅 รายงานรายเดือน</div>
+    <div class="tab" onclick="switchTab('history')">📁 ประวัติ</div>
+    <div class="tab" onclick="switchTab('stock')">🏭 สต๊อกรถ</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- DASHBOARD -->
+  <div class="section active" id="sec-dashboard">
+    <div id="overdue-banner"></div>
+
+    <div class="cards-row">
+      <div class="summary-card c1">
+        <div class="card-label">📦 รายการเช่าทั้งหมด</div>
+        <div class="card-value" id="d-total">0</div>
+        <div class="card-sub">รวมทุกสถานะ</div>
+      </div>
+      <div class="summary-card c2">
+        <div class="card-label">🟢 กำลังปล่อยเช่าอยู่</div>
+        <div class="card-value" id="d-active">0</div>
+        <div class="card-sub">ยังไม่รับคืน</div>
+      </div>
+      <div class="summary-card c3">
+        <div class="card-label">⏰ ครบกำหนดพรุ่งนี้</div>
+        <div class="card-value" id="d-duesoon">0</div>
+        <div class="card-sub">ต้องไปรับคืน</div>
+      </div>
+      <div class="summary-card c4">
+        <div class="card-label">🚨 เกินกำหนดคืน</div>
+        <div class="card-value" id="d-overdue">0</div>
+        <div class="card-sub">ต้องดำเนินการด่วน</div>
+      </div>
+    </div>
+
+    <!-- Quick today due -->
+    <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1.5rem;">
+      <div style="flex:1; min-width:280px;">
+        <div style="font-size:0.78rem; font-weight:700; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:10px;">🚨 เกินกำหนดและต้องรับคืน (ด่วน)</div>
+        <div id="urgent-list" class="notif-list"></div>
+      </div>
+      <div style="flex:1; min-width:280px;">
+        <div style="font-size:0.78rem; font-weight:700; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:10px;">📋 รายการเพิ่งเพิ่ม</div>
+        <div id="recent-list"></div>
+      </div>
+    </div>
+
+    <div class="toolbar" style="justify-content:flex-end;">
+      <button class="btn btn-primary" onclick="openAddModal()">➕ เพิ่มรายการเช่าใหม่</button>
+    </div>
+  </div>
+
+  <!-- RENTALS LIST -->
+  <div class="section" id="sec-rentals">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <input type="text" class="search-box" id="search-input" placeholder="ค้นหาลูกค้า, เบอร์รถ, โลเคชั่น, เซลล์..." oninput="renderRentals()">
+      </div>
+      <select class="filter-sel" id="filter-status" onchange="renderRentals()">
+        <option value="">ทุกสถานะ</option>
+        <option value="active">กำลังเช่า</option>
+        <option value="due-soon">ครบพรุ่งนี้</option>
+        <option value="overdue">เกินกำหนด</option>
+        <option value="returned">คืนแล้ว</option>
+      </select>
+      <select class="filter-sel" id="filter-type" onchange="renderRentals()">
+        <option value="">ทุกประเภท</option>
+        <option value="daily">รายวัน</option>
+        <option value="monthly">รายเดือน</option>
+        <option value="yearly">รายปี</option>
+      </select>
+      <input type="text" class="search-box" id="filter-forklift" placeholder="🔍 เบอร์รถ..." oninput="renderRentals()" style="min-width:140px;max-width:160px;">
+      <select class="filter-sel" id="filter-sales" onchange="renderRentals()" style="min-width:140px;">
+        <option value="">ทุกเซลล์</option>
+      </select>
+      <button class="btn btn-primary" onclick="openAddModal()">➕ เพิ่มรายการ</button>
+      <button class="btn btn-secondary" onclick="exportCSV()">⬇️ Export CSV</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>รหัส</th>
+            <th>บริษัทลูกค้า</th>
+            <th>เบอร์รถโฟร์คลิฟท์</th>
+            <th>เซลล์เจ้าของงาน</th>
+            <th>ประเภท</th>
+            <th>วันปล่อย</th>
+            <th>วันกำหนดรับคืน</th>
+            <th>โลเคชั่น</th>
+            <th>รถขนส่ง (ไปส่ง)</th>
+            <th>รถขนส่ง (รับคืน)</th>
+            <th>สถานะ</th>
+            <th>จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="rentals-tbody"></tbody>
+      </table>
+    </div>
+    <div id="rentals-empty" class="empty-state" style="display:none;">
+      <div class="icon">📭</div>
+      <p>ไม่พบรายการที่ค้นหา</p>
+    </div>
+  </div>
+
+  <!-- FORKLIFT TRACKER -->
+  <div class="section" id="sec-forklift">
+    <div class="fkl-search-wrap">
+      <div class="search-wrap" style="flex:1;min-width:220px;">
+        <input type="text" class="search-box" id="fkl-search" placeholder="ค้นหาเบอร์รถ, บริษัท, โลเคชั่น..." oninput="renderForklift()">
+      </div>
+      <select class="filter-sel" id="fkl-sort" onchange="renderForklift()">
+        <option value="number">เรียงตามเบอร์รถ</option>
+        <option value="status">เรียงตามสถานะ</option>
+        <option value="endDate">เรียงตามวันคืน</option>
+      </select>
+    </div>
+
+    <div class="fkl-filter-bar">
+      <div class="fkl-chip active" id="chip-all" onclick="setFklFilter('all')">🚜 ทั้งหมด (<span id="chip-all-n">0</span>)</div>
+      <div class="fkl-chip chip-active" id="chip-active" onclick="setFklFilter('active')">🔵 กำลังเช่า (<span id="chip-active-n">0</span>)</div>
+      <div class="fkl-chip chip-duesoon" id="chip-duesoon" onclick="setFklFilter('due-soon')">⏰ ครบพรุ่งนี้ (<span id="chip-duesoon-n">0</span>)</div>
+      <div class="fkl-chip chip-overdue" id="chip-overdue" onclick="setFklFilter('overdue')">🚨 เกินกำหนด (<span id="chip-overdue-n">0</span>)</div>
+    </div>
+
+    <div class="fkl-grid" id="fkl-grid"></div>
+    <div id="fkl-empty" class="fkl-empty" style="display:none;">
+      <div class="icon">🔍</div>
+      <p>ไม่พบเบอร์รถที่ค้นหา</p>
+    </div>
+  </div>
+
+  <!-- DATE VIEW -->
+  <div class="section" id="sec-dateview">
+    <div class="dv-header">
+      <input type="date" class="dv-date-input" id="dv-date" oninput="renderDateView()">
+      <div>
+        <div class="dv-date-label" id="dv-date-label">เลือกวันที่เพื่อดูงาน</div>
+        <div style="margin-top:4px;"><span class="dv-day-badge" id="dv-day-badge"></span></div>
+      </div>
+      <button class="dv-today-btn" onclick="dvSetToday()">📅 วันนี้</button>
+    </div>
+    <div class="dv-summary-row" id="dv-summary" style="display:none;"></div>
+    <div id="dv-content"></div>
+    <div id="dv-empty" class="dv-empty" style="display:none;">
+      <div class="icon">📭</div>
+      <p>ไม่มีงานในวันที่เลือก</p>
+    </div>
+    <div id="dv-placeholder" class="dv-empty">
+      <div class="icon">📆</div>
+      <p>เลือกวันที่เพื่อดูรายการเช่าทั้งหมดในวันนั้น</p>
+    </div>
+  </div>
+
+  <!-- NOTIFICATIONS -->
+  <div class="section" id="sec-notifications">
+    <div style="font-size:0.78rem; font-weight:700; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:16px;">การแจ้งเตือนทั้งหมด</div>
+    <div id="notif-list-full" class="notif-list"></div>
+    <div id="notif-empty" class="empty-state" style="display:none;">
+      <div class="icon">✅</div>
+      <p>ไม่มีการแจ้งเตือนในขณะนี้</p>
+    </div>
+  </div>
+
+  <!-- MONTHLY REPORT -->
+  <div class="section" id="sec-monthly">
+    <div class="toolbar">
+      <select class="filter-sel" id="monthly-month" onchange="renderMonthly()">
+      </select>
+      <select class="filter-sel" id="monthly-year" onchange="renderMonthly()">
+      </select>
+      <button class="btn btn-secondary" onclick="exportMonthlyCSV()">⬇️ Export รายงาน</button>
+    </div>
+    <div id="monthly-summary" class="cards-row" style="margin-bottom:1.5rem;"></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>รหัส</th>
+            <th>บริษัทลูกค้า</th>
+            <th>เบอร์รถโฟร์คลิฟท์</th>
+            <th>เซลล์เจ้าของงาน</th>
+            <th>ประเภท</th>
+            <th>วันปล่อย</th>
+            <th>วันกำหนดรับ</th>
+            <th>วันรับจริง</th>
+            <th>โลเคชั่น</th>
+            <th>สถานะ</th>
+          </tr>
+        </thead>
+        <tbody id="monthly-tbody"></tbody>
+      </table>
+    </div>
+    <div id="monthly-empty" class="empty-state" style="display:none;">
+      <div class="icon">📅</div>
+      <p>ไม่มีรายการในเดือนนี้</p>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="section" id="sec-history">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <input type="text" class="search-box" id="history-search" placeholder="ค้นหาประวัติ..." oninput="renderHistory()">
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>รหัส</th>
+            <th>บริษัทลูกค้า</th>
+            <th>เบอร์รถโฟร์คลิฟท์</th>
+            <th>เซลล์เจ้าของงาน</th>
+            <th>ประเภท</th>
+            <th>วันปล่อย</th>
+            <th>วันกำหนดรับ</th>
+            <th>วันรับจริง</th>
+            <th>โลเคชั่น</th>
+            <th>รถขนส่ง</th>
+          </tr>
+        </thead>
+        <tbody id="history-tbody"></tbody>
+      </table>
+    </div>
+    <div id="history-empty" class="empty-state" style="display:none;">
+      <div class="icon">📁</div>
+      <p>ไม่มีประวัติการคืนรถ</p>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+  <!-- STOCK SECTION -->
+  <div class="section" id="sec-stock">
+    <div class="stock-toolbar">
+      <button class="btn btn-primary" onclick="openStockAddModal()">➕ เพิ่มรถในสต๊อก</button>
+      <div style="width:100%;height:0;flex-basis:100%;"></div>
+      <span style="font-size:0.72rem;color:var(--text-dim);font-weight:600;letter-spacing:.5px;align-self:center;">สถานะ:</span>
+      <span class="stock-filter-chip active" id="sfchip-all"      onclick="setStockFilter('all')">ทั้งหมด</span>
+      <span class="stock-filter-chip"        id="sfchip-free"     onclick="setStockFilter('free')">✅ ว่าง</span>
+      <span class="stock-filter-chip"        id="sfchip-reserved" onclick="setStockFilter('reserved')">🔖 จองแล้ว</span>
+      <span class="stock-filter-chip"        id="sfchip-busy"     onclick="setStockFilter('busy')">🔴 ไม่ว่าง</span>
+      <span class="stock-filter-chip"        id="sfchip-maint"    onclick="setStockFilter('maint')">🔧 ซ่อมบำรุง</span>
+      <div style="width:100%;height:0;flex-basis:100%;"></div>
+      <span style="font-size:0.72rem;color:var(--text-dim);font-weight:600;letter-spacing:.5px;align-self:center;">กรอง:</span>
+      <select class="filter-sel" id="stock-fuel-filter" onchange="renderStock()" style="min-width:160px;">
+        <option value="">⛽ ทุกเชื้อเพลิง</option>
+        <option value="lpg">⛽ LPG (แก๊ส)</option>
+        <option value="diesel">🛢️ ดีเซล</option>
+        <option value="electric_sit">⚡ ไฟฟ้านั่งขับ</option>
+        <option value="electric_stand">⚡ ไฟฟ้ายืนขับ</option>
+        <option value="electric_side">⚡ ไฟฟ้านั่งข้าง</option>
+        <option value="gasoline">⛽ น้ำมันเบนซิน</option>
+      </select>
+      <select class="filter-sel" id="stock-cap-filter" onchange="renderStock()" style="min-width:130px;">
+        <option value="">⚖️ ทุกขนาด</option>
+      </select>
+      <select class="filter-sel" id="stock-branch-filter" onchange="renderStock()" style="min-width:150px;">
+        <option value="">🏢 ทุกสาขา</option>
+        <option value="สมุทรปราการ">📍 สมุทรปราการ</option>
+        <option value="ชลบุรี">📍 ชลบุรี</option>
+        <option value="ขอนแก่น">📍 ขอนแก่น</option>
+      </select>
+      <input type="text" class="search-box" id="stock-search" placeholder="🔍 เบอร์รถ, รุ่น..." oninput="renderStock()" style="min-width:160px;max-width:200px;">
+      <button class="btn-xs" onclick="clearStockFilters()" style="align-self:center;">✕ ล้างตัวกรอง</button>
+    </div>
+    <div class="stock-summary" id="stock-summary"></div>
+    <div class="stock-grid" id="stock-grid"></div>
+    <div class="stock-empty" id="stock-empty" style="display:none;">
+      <div class="icon">🏭</div>
+      <p>ไม่มีรถในสต๊อก</p>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="modal-add">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-add-title">➕ เพิ่มรายการเช่าใหม่</div>
+      <button class="modal-close" onclick="closeModal('modal-add')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <hr class="section-divider"><span>ข้อมูลลูกค้า</span>
+        <div class="form-group span-2">
+          <label>ชื่อบริษัทลูกค้า <span class="required">*</span></label>
+          <input type="text" id="f-company" placeholder="เช่น บริษัท ABC จำกัด">
+        </div>
+        <div class="form-group">
+          <label>ผู้ติดต่อ</label>
+          <input type="text" id="f-contact" placeholder="ชื่อผู้ติดต่อ">
+        </div>
+        <div class="form-group">
+          <label>เบอร์โทรผู้ติดต่อ</label>
+          <input type="text" id="f-phone" placeholder="0xx-xxx-xxxx">
+        </div>
+
+        <hr class="section-divider"><span>ข้อมูลรถ & การเช่า</span>
+        <div class="form-group">
+          <label>เบอร์รถโฟร์คลิฟท์ <span class="required">*</span></label>
+          <input type="text" id="f-forklift" placeholder="เช่น FKL-001, B-12">
+        </div>
+        <div class="form-group">
+          <label>เซลล์เจ้าของงาน <span class="required">*</span></label>
+          <select id="f-sales">
+            <option value="">-- เลือกเซลล์ --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>ประเภทการเช่า <span class="required">*</span></label>
+          <select id="f-type">
+            <option value="daily">รายวัน</option>
+            <option value="monthly">รายเดือน</option>
+            <option value="yearly">รายปี</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>วันที่ปล่อยรถ <span class="required">*</span></label>
+          <input type="date" id="f-start" oninput="checkDateSunday('f-start','warn-start')">
+          <div id="warn-start" style="display:none;color:var(--danger);font-size:0.78rem;font-weight:700;margin-top:4px;">🔴 วันอาทิตย์ — กรุณาตรวจสอบตารางขนส่ง</div>
+        </div>
+        <div class="form-group">
+          <label>วันที่กำหนดรับคืน <span class="required">*</span></label>
+          <input type="date" id="f-end" oninput="checkDateSunday('f-end','warn-end')">
+          <div id="warn-end" style="display:none;color:var(--danger);font-size:0.78rem;font-weight:700;margin-top:4px;">🔴 วันอาทิตย์ — กรุณาตรวจสอบตารางขนส่ง</div>
+        </div>
+
+        <hr class="section-divider"><span>ข้อมูลโลเคชั่น & ขนส่ง</span>
+        <div class="form-group span-2">
+          <label>โลเคชั่น / หน้างาน <span class="required">*</span></label>
+          <input type="text" id="f-location" placeholder="เช่น นิคมอุตสาหกรรมอมตะนคร ชลบุรี">
+        </div>
+        <div class="form-group">
+          <label>รถขนส่งไปส่ง (ทะเบียน/คนขับ)</label>
+          <input type="text" id="f-truck-deliver" placeholder="เช่น 80-4521 / สมชาย">
+        </div>
+        <div class="form-group">
+          <label>รถขนส่งรับคืน (ทะเบียน/คนขับ)</label>
+          <input type="text" id="f-truck-return" placeholder="เช่น 80-4521 / สมชาย (อาจเหมือนกัน)">
+        </div>
+
+        <hr class="section-divider"><span>ข้อมูลเพิ่มเติม</span>
+        <div class="form-group span-2">
+          <label>หมายเหตุ</label>
+          <textarea id="f-note" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveRental()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal" style="max-width:840px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="detail-title">รายละเอียดการเช่า</div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;" id="detail-id"></div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <span id="detail-status-badge"></span>
+        <button class="modal-close" onclick="closeModal('modal-detail')">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" id="detail-body"></div>
+    <div class="modal-footer" id="detail-footer"></div>
+  </div>
+</div>
+
+<!-- RETURN MODAL -->
+<div class="modal-overlay" id="modal-return">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <div class="modal-title">✅ บันทึกรับรถคืน</div>
+      <button class="modal-close" onclick="closeModal('modal-return')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group span-2">
+          <label>วันที่รับรถคืนจริง <span class="required">*</span></label>
+          <input type="date" id="return-date" oninput="checkDateSunday('return-date','warn-return')">
+          <div id="warn-return" style="display:none;color:var(--danger);font-size:0.78rem;font-weight:700;margin-top:4px;">🔴 วันอาทิตย์ — กรุณาตรวจสอบตารางขนส่ง</div>
+        </div>
+        <div class="form-group span-2">
+          <label>รถขนส่งที่ไปรับ</label>
+          <input type="text" id="return-truck" placeholder="ทะเบียน / ชื่อคนขับ">
+        </div>
+        <div class="form-group span-2">
+          <label>หมายเหตุการรับคืน</label>
+          <textarea id="return-note" placeholder="สภาพรถ, ปัญหา..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-return')">ยกเลิก</button>
+      <button class="btn btn-success" onclick="confirmReturn()">✅ ยืนยันรับคืน</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ========== API CONFIG ==========
+const API_URL = 'https://script.google.com/macros/s/AKfycbyQ8ejuZI12H9Nn4FiZmukgEcoB2d-OrjWs8cQJ-rvakmGATFgjtLXMoLazPUFtC8kP/exec'; // ← วาง Web App URL จาก Apps Script ที่นี่
+
+// ========== LOADING HELPERS ==========
+function showLoading(text) {
+  document.getElementById('loadingText').textContent = text || 'กำลังโหลดข้อมูล...';
+  document.getElementById('loadingOverlay').classList.remove('hidden');
+}
+function hideLoading() {
+  document.getElementById('loadingOverlay').classList.add('hidden');
+}
+
+// ========== API HELPERS ==========
+async function apiPost(payload) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    // 👇 เพิ่ม headers บรรทัดนี้เข้าไป (สำคัญมากสำหรับการแก้ CORS ใน Google Sheets)
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8" 
+    },
+    body: JSON.stringify(payload),
+    redirect: 'follow',
+  });
+  
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error || 'API Error');
+  return data.data;
+}
+
+// ========== DATA STORAGE ==========
+let rentals = [];
+let editingId = null;
+let returningId = null;
+
+function genId() {
+  return 'FKL-' + Date.now().toString(36).toUpperCase();
+}
+
+
+// ========== STATUS LOGIC ==========
+function getStatus(r) {
+  if (r.status === 'returned') return 'returned';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const end = new Date(r.endDate); end.setHours(0,0,0,0);
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+  if (end < today) return 'overdue';
+  if (end.getTime() === today.getTime() || end.getTime() === tomorrow.getTime()) return 'due-soon';
+  return 'active';
+}
+
+function statusLabel(s) {
+  if (s === 'active') return '<span class="badge-status s-active">กำลังเช่า</span>';
+  if (s === 'overdue') return '<span class="badge-status s-overdue">เกินกำหนด</span>';
+  if (s === 'due-soon') return '<span class="badge-status s-due-soon">ครบพรุ่งนี้</span>';
+  if (s === 'returned') return '<span class="badge-status s-returned">คืนแล้ว</span>';
+  return '';
+}
+
+function typeLabel(t) {
+  if (t === 'daily')   return '<span class="rtype rt-daily">รายวัน</span>';
+  if (t === 'yearly')  return '<span class="rtype rt-yearly">รายปี</span>';
+  return '<span class="rtype rt-monthly">รายเดือน</span>';
+}
+
+// ========== DATE FORMAT ==========
+const MONTHS_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const DAYS_TH = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
+
+// Normalize date จาก Google Sheets (อาจเป็น ISO string, Date object, หรือ number)
+function normalizeDate(d) {
+  if (!d || d === 'null') return null;
+  if (typeof d === 'number') {
+    // Google Sheets serial number หรือ epoch ms
+    const dt = d > 1e10 ? new Date(d) : new Date((d - 25569) * 86400000);
+    return dt.toISOString().split('T')[0];
+  }
+  const s = String(d);
+  if (s.includes('T')) return s.split('T')[0];           // "2025-03-11T00:00:00.000Z"
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;          // "YYYY-MM-DD" ถูกอยู่แล้ว
+  const dt2 = new Date(s);
+  if (!isNaN(dt2)) return dt2.toISOString().split('T')[0];
+  return s;
+}
+
+function fmtDate(d) {
+  if (!d) return '-';
+  const nd = normalizeDate(d);
+  if (!nd) return '-';
+  const [y, m, day] = nd.split('-').map(Number);
+  const dateObj = new Date(y, m - 1, day);
+  const buddYear = y + 543;
+  return `${day} ${MONTHS_TH[m-1]} ${buddYear}`;
+}
+
+function fmtDateFull(d) {
+  // Returns full date string with day-of-week, adds 🔴 if Sunday
+  if (!d) return '-';
+  const nd = normalizeDate(d);
+  if (!nd) return '-';
+  const [y, m, day] = nd.split('-').map(Number);
+  const dateObj = new Date(y, m - 1, day);
+  const dow = dateObj.getDay(); // 0=Sun
+  const buddYear = y + 543;
+  const base = `${DAYS_TH[dow]}ที่ ${day} ${MONTHS_TH[m-1]} ${buddYear}`;
+  if (dow === 0) return `${base} 🔴`;
+  return base;
+}
+
+function isSunday(d) {
+  if (!d) return false;
+  const nd = normalizeDate(d);
+  if (!nd) return false;
+  const [y, m, day] = nd.split('-').map(Number);
+  return new Date(y, m - 1, day).getDay() === 0;
+}
+
+function sundayWarning(d) {
+  if (!d || !isSunday(d)) return '';
+  return `<span style="color:var(--danger);font-size:0.75rem;font-weight:700;margin-left:6px;">🔴 อาทิตย์</span>`;
+}
+
+function checkDateSunday(inputId, warnId) {
+  const val = document.getElementById(inputId).value;
+  const warn = document.getElementById(warnId);
+  if (val && isSunday(val)) {
+    warn.style.display = 'block';
+  } else {
+    warn.style.display = 'none';
+  }
+}
+
+function daysDiff(endDate) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const end = new Date(endDate); end.setHours(0,0,0,0);
+  return Math.round((end - today) / 86400000);
+}
+
+// ========== TAB SWITCH ==========
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  event.target.closest('.tab').classList.add('active');
+  document.getElementById('sec-' + name).classList.add('active');
+  if (name === 'rentals')      renderRentals();
+  if (name === 'forklift')     renderForklift();
+  if (name === 'dateview')     renderDateView();
+  if (name === 'notifications') renderNotifications();
+  if (name === 'monthly')      renderMonthly();
+  if (name === 'history')      renderHistory();
+  if (name === 'stock')        renderStock();
+}
+
+// ========== DASHBOARD ==========
+function renderDashboard() {
+  const active = rentals.filter(r => getStatus(r) !== 'returned');
+  const overdue = active.filter(r => getStatus(r) === 'overdue');
+  const dueSoon = active.filter(r => getStatus(r) === 'due-soon');
+  const returned = rentals.filter(r => r.status === 'returned');
+
+  document.getElementById('d-total').textContent = rentals.length;
+  document.getElementById('d-active').textContent = active.length;
+  document.getElementById('d-duesoon').textContent = dueSoon.length;
+  document.getElementById('d-overdue').textContent = overdue.length;
+  document.getElementById('hstat-total').textContent = rentals.length;
+  document.getElementById('hstat-active').textContent = active.length;
+  document.getElementById('hstat-duesoon').textContent = dueSoon.length;
+  document.getElementById('hstat-overdue').textContent = overdue.length;
+
+  // Badges
+  document.getElementById('tab-badge-rentals').textContent = active.length;
+  const notifCount = overdue.length + dueSoon.length;
+  document.getElementById('tab-badge-notif').textContent = notifCount;
+
+  // Overdue banner
+  const banner = document.getElementById('overdue-banner');
+  let bannerHTML = '';
+  if (overdue.length > 0) {
+    bannerHTML += `<div class="alert-banner"><div class="icon">🚨</div><div class="msg"><strong>มีรถโฟร์คลิฟท์ ${overdue.length} คัน เกินกำหนดคืน!</strong><p>${overdue.map(r=>r.forklift + ' (' + r.company + ')').join(', ')}</p></div></div>`;
+  }
+  // Sunday warning banner
+  const sundayAlert = active.filter(r => isSunday(r.endDate) && getStatus(r) !== 'returned');
+  if (sundayAlert.length > 0) {
+    bannerHTML += `<div class="alert-banner" style="border-left-color:var(--warning);background:linear-gradient(135deg,rgba(249,115,22,0.12),rgba(249,115,22,0.04));"><div class="icon">🔴</div><div class="msg"><strong style="color:var(--warning);">วันกำหนดคืนตรงกับวันอาทิตย์ ${sundayAlert.length} รายการ!</strong><p>${sundayAlert.map(r=>r.forklift+' กำหนดคืน '+fmtDate(r.endDate)).join(' · ')}</p></div></div>`;
+  }
+  banner.innerHTML = bannerHTML;
+
+  // Urgent list
+  const urgentEl = document.getElementById('urgent-list');
+  const urgentRentals = [...overdue, ...dueSoon].slice(0, 5);
+  if (urgentRentals.length === 0) {
+    urgentEl.innerHTML = '<div class="notif-item ni-info"><div class="notif-icon">✅</div><div class="notif-content"><div class="ntitle">ไม่มีรายการด่วน</div><div class="ndesc">ทุกรายการปกติ</div></div></div>';
+  } else {
+    urgentEl.innerHTML = urgentRentals.map(r => {
+      const st = getStatus(r);
+      const diff = daysDiff(r.endDate);
+      const cls = st === 'overdue' ? 'ni-overdue' : 'ni-duesoon';
+      const icon = st === 'overdue' ? '🚨' : (isSunday(r.endDate) ? '🔴' : '⏰');
+      const diffText = diff < 0 ? `เกิน ${Math.abs(diff)} วัน` : diff === 0 ? 'วันนี้!' : 'พรุ่งนี้!';
+      return `<div class="notif-item ${cls}" onclick="openDetail('${r.id}')">
+        <div class="notif-icon">${icon}</div>
+        <div class="notif-content">
+          <div class="ntitle">${r.forklift}${isSunday(r.endDate) ? ' <span style="color:var(--danger);font-size:0.72rem;">🔴 วันอาทิตย์!</span>' : ''}</div>
+          <div class="ndesc">${r.company} · ${r.location}</div>
+          <div class="ndesc">${fmtDateFull(r.endDate)}</div>
+        </div>
+        <div class="notif-time">${diffText}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Recent list
+  const recentEl = document.getElementById('recent-list');
+  const recent = [...rentals].sort((a,b) => b.createdAt > a.createdAt ? 1 : -1).slice(0, 5);
+  recentEl.innerHTML = recent.map(r => {
+    const st = getStatus(r);
+    return `<div class="notif-item" onclick="openDetail('${r.id}')">
+      <div class="notif-content">
+        <div class="ntitle">${r.forklift} ${typeLabel(r.type)}</div>
+        <div class="ndesc">${r.company} · ${fmtDate(r.endDate)}${sundayWarning(r.endDate)}</div>
+      </div>
+      <div>${statusLabel(st)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ========== RENTALS TABLE ==========
+function renderRentals() {
+  const search = (document.getElementById('search-input').value || '').toLowerCase();
+  const statusF = document.getElementById('filter-status').value;
+  const typeF = document.getElementById('filter-type').value;
+  const forkliftF = (document.getElementById('filter-forklift').value || '').toLowerCase();
+  const salesF = document.getElementById('filter-sales').value;
+
+  let filtered = rentals.filter(r => {
+    if (r.status === 'returned') return false;
+    const st = getStatus(r);
+    const text = (r.company + r.forklift + r.location + r.contact + r.truckDeliver + (r.sales||'')).toLowerCase();
+    if (search && !text.includes(search)) return false;
+    if (statusF && st !== statusF) return false;
+    if (typeF && r.type !== typeF) return false;
+    if (forkliftF && !r.forklift.toLowerCase().includes(forkliftF)) return false;
+    if (salesF && (r.sales || '') !== salesF) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById('rentals-tbody');
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    document.getElementById('rentals-empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('rentals-empty').style.display = 'none';
+
+  // Sort: overdue first, then due-soon, then active
+  filtered.sort((a,b) => {
+    const order = { overdue: 0, 'due-soon': 1, active: 2 };
+    return (order[getStatus(a)] || 3) - (order[getStatus(b)] || 3);
+  });
+
+  tbody.innerHTML = filtered.map(r => {
+    const st = getStatus(r);
+    const diff = daysDiff(r.endDate);
+    const diffText = st === 'overdue' ? `<span class="text-red mono">เกิน ${Math.abs(diff)} วัน</span>` :
+                     st === 'due-soon' ? `<span class="text-orange mono">${diff === 0 ? 'วันนี้!' : 'พรุ่งนี้!'}</span>` :
+                     `<span class="text-muted mono">อีก ${diff} วัน</span>`;
+    return `<tr onclick="openDetail('${r.id}')">
+      <td class="td-mono text-muted">${r.id}</td>
+      <td class="fw-bold">${r.company}</td>
+      <td class="td-mono text-accent">${r.forklift}</td>
+      <td style="font-size:0.82rem">${r.sales || '-'}</td>
+      <td>${typeLabel(r.type)}</td>
+      <td class="td-mono">${fmtDate(r.startDate)}${sundayWarning(r.startDate)}</td>
+      <td><span class="td-mono">${fmtDate(r.endDate)}</span>${sundayWarning(r.endDate)}<br>${diffText}</td>
+      <td>${r.location}</td>
+      <td class="text-muted" style="font-size:0.78rem">${r.truckDeliver || '-'}</td>
+      <td class="text-muted" style="font-size:0.78rem">${r.truckReturn || '-'}</td>
+      <td>${statusLabel(st)}</td>
+      <td onclick="event.stopPropagation()">
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-success" onclick="openReturn('${r.id}')">✅ รับคืน</button>
+          <button class="btn btn-sm btn-secondary" onclick="openEdit('${r.id}')">✏️</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteRental('${r.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ========== NOTIFICATIONS ==========
+function renderNotifications() {
+  const active = rentals.filter(r => r.status !== 'returned');
+  const overdue = active.filter(r => getStatus(r) === 'overdue');
+  const dueSoon = active.filter(r => getStatus(r) === 'due-soon');
+  const all = [...overdue, ...dueSoon];
+
+  const el = document.getElementById('notif-list-full');
+  if (all.length === 0) {
+    el.innerHTML = '';
+    document.getElementById('notif-empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('notif-empty').style.display = 'none';
+
+  el.innerHTML = all.map(r => {
+    const st = getStatus(r);
+    const diff = daysDiff(r.endDate);
+    const cls = st === 'overdue' ? 'ni-overdue' : 'ni-duesoon';
+    const icon = st === 'overdue' ? '🚨' : (isSunday(r.endDate) ? '🔴' : '⏰');
+    const diffText = diff < 0 ? `เกิน ${Math.abs(diff)} วัน` : diff === 0 ? 'ครบกำหนดวันนี้!' : 'ครบกำหนดพรุ่งนี้!';
+    const statusTxt = st === 'overdue' ? 'เกินกำหนดคืนรถ' : 'ครบกำหนดคืนรถ (แจ้งเตือนล่วงหน้า 1 วัน)';
+    const sundayNote = isSunday(r.endDate) ? `<div class="ndesc" style="color:var(--danger);font-weight:700;margin-top:4px;">🔴 วันกำหนดคืนตรงกับวันอาทิตย์ — กรุณาตรวจสอบตารางขนส่ง</div>` : '';
+    return `<div class="notif-item ${cls}" onclick="openDetail('${r.id}')">
+      <div class="notif-icon">${icon}</div>
+      <div class="notif-content">
+        <div class="ntitle">${statusTxt} · ${r.forklift}</div>
+        <div class="ndesc">${r.company} · หน้างาน: ${r.location} · กำหนดคืน: ${fmtDateFull(r.endDate)}</div>
+        <div class="ndesc" style="margin-top:4px">รถขนส่งรับคืน: ${r.truckReturn || 'ยังไม่กำหนด'}</div>
+        ${sundayNote}
+      </div>
+      <div>
+        <div class="notif-time">${diffText}</div>
+        <button class="btn btn-sm btn-success" style="margin-top:6px;" onclick="event.stopPropagation(); openReturn('${r.id}')">รับคืน</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ========== MONTHLY ==========
+function populateMonthFilter() {
+  const months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const today = new Date();
+  const mSel = document.getElementById('monthly-month');
+  const ySel = document.getElementById('monthly-year');
+  mSel.innerHTML = months.map((m, i) => `<option value="${i+1}" ${i === today.getMonth() ? 'selected' : ''}>${m}</option>`).join('');
+  const years = [];
+  for (let y = today.getFullYear() - 2; y <= today.getFullYear() + 1; y++) years.push(y);
+  ySel.innerHTML = years.map(y => `<option value="${y}" ${y === today.getFullYear() ? 'selected' : ''}>${y + 543}</option>`).join('');
+}
+
+function renderMonthly() {
+  const month = parseInt(document.getElementById('monthly-month').value);
+  const year = parseInt(document.getElementById('monthly-year').value);
+
+  const filtered = rentals.filter(r => {
+    const s = new Date(r.startDate);
+    const e = new Date(r.endDate);
+    const first = new Date(year, month - 1, 1);
+    const last = new Date(year, month, 0);
+    // Include if rental overlaps with this month
+    return s <= last && e >= first;
+  });
+
+  // Summary
+  const sumEl = document.getElementById('monthly-summary');
+  const active = filtered.filter(r => getStatus(r) !== 'returned').length;
+  const ret = filtered.filter(r => r.status === 'returned').length;
+  const daily = filtered.filter(r => r.type === 'daily').length;
+  const monthly = filtered.filter(r => r.type === 'monthly').length;
+  const yearly = filtered.filter(r => r.type === 'yearly').length;
+  sumEl.innerHTML = `
+    <div class="summary-card c1"><div class="card-label">รายการทั้งหมดในเดือน</div><div class="card-value">${filtered.length}</div></div>
+    <div class="summary-card c2"><div class="card-label">กำลังเช่าอยู่</div><div class="card-value">${active}</div></div>
+    <div class="summary-card c3"><div class="card-label">รายวัน</div><div class="card-value">${daily}</div></div>
+    <div class="summary-card c4"><div class="card-label">รายเดือน</div><div class="card-value">${monthly}</div></div>
+    <div class="summary-card c1"><div class="card-label">รายปี</div><div class="card-value">${yearly}</div></div>
+  `;
+
+  const tbody = document.getElementById('monthly-tbody');
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    document.getElementById('monthly-empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('monthly-empty').style.display = 'none';
+
+  tbody.innerHTML = filtered.map(r => {
+    const st = getStatus(r);
+    return `<tr onclick="openDetail('${r.id}')">
+      <td class="td-mono text-muted">${r.id}</td>
+      <td class="fw-bold">${r.company}</td>
+      <td class="td-mono text-accent">${r.forklift}</td>
+      <td style="font-size:0.82rem">${r.sales || '-'}</td>
+      <td>${typeLabel(r.type)}</td>
+      <td class="td-mono">${fmtDate(r.startDate)}${sundayWarning(r.startDate)}</td>
+      <td class="td-mono">${fmtDate(r.endDate)}${sundayWarning(r.endDate)}</td>
+      <td class="td-mono">${r.returnDate ? fmtDate(r.returnDate) : '-'}</td>
+      <td>${r.location}</td>
+      <td>${statusLabel(st)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ========== HISTORY ==========
+function renderHistory() {
+  const search = (document.getElementById('history-search').value || '').toLowerCase();
+  let hist = rentals.filter(r => r.status === 'returned');
+  if (search) hist = hist.filter(r => (r.company + r.forklift + r.location + (r.sales||'')).toLowerCase().includes(search));
+  hist.sort((a,b) => b.returnDate > a.returnDate ? 1 : -1);
+
+  const tbody = document.getElementById('history-tbody');
+  if (hist.length === 0) {
+    tbody.innerHTML = '';
+    document.getElementById('history-empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('history-empty').style.display = 'none';
+
+  tbody.innerHTML = hist.map(r => `<tr onclick="openDetail('${r.id}')">
+    <td class="td-mono text-muted">${r.id}</td>
+    <td class="fw-bold">${r.company}</td>
+    <td class="td-mono text-accent">${r.forklift}</td>
+    <td style="font-size:0.82rem">${r.sales || '-'}</td>
+    <td>${typeLabel(r.type)}</td>
+    <td class="td-mono">${fmtDate(r.startDate)}${sundayWarning(r.startDate)}</td>
+    <td class="td-mono">${fmtDate(r.endDate)}${sundayWarning(r.endDate)}</td>
+    <td class="td-mono text-green">${fmtDate(r.returnDate)}</td>
+    <td>${r.location}</td>
+    <td class="text-muted" style="font-size:0.78rem">${r.returnTruck || r.truckReturn || '-'}</td>
+  </tr>`).join('');
+}
+
+// ========== ADD/EDIT MODAL ==========
+function openAddModal() {
+  editingId = null;
+  document.getElementById('modal-add-title').textContent = '➕ เพิ่มรายการเช่าใหม่';
+  clearForm();
+  // Default dates
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('f-start').value = today;
+  document.getElementById('modal-add').classList.add('open');
+}
+
+function openEdit(id) {
+  editingId = id;
+  const r = rentals.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('modal-add-title').textContent = '✏️ แก้ไขรายการเช่า';
+  document.getElementById('f-company').value = r.company;
+  document.getElementById('f-contact').value = r.contact || '';
+  document.getElementById('f-phone').value = r.phone || '';
+  document.getElementById('f-forklift').value = r.forklift;
+  document.getElementById('f-sales').value = r.sales || '';
+  document.getElementById('f-type').value = r.type;
+  document.getElementById('f-start').value = r.startDate;
+  document.getElementById('f-end').value = r.endDate;
+  document.getElementById('f-location').value = r.location;
+  document.getElementById('f-truck-deliver').value = r.truckDeliver || '';
+  document.getElementById('f-truck-return').value = r.truckReturn || '';
+  document.getElementById('f-note').value = r.note || '';
+  document.getElementById('modal-add').classList.add('open');
+  closeModal('modal-detail');
+}
+
+function clearForm() {
+  ['f-company','f-contact','f-phone','f-forklift','f-start','f-end','f-location','f-truck-deliver','f-truck-return','f-note'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-type').value = 'daily';
+  document.getElementById('f-sales').value = '';
+}
+
+async function saveRental() {
+  const company = document.getElementById('f-company').value.trim();
+  const forklift = document.getElementById('f-forklift').value.trim();
+  const startDate = document.getElementById('f-start').value;
+  const endDate = document.getElementById('f-end').value;
+  const location = document.getElementById('f-location').value.trim();
+  const sales = document.getElementById('f-sales').value;
+
+  if (!company || !forklift || !startDate || !endDate || !location) {
+    showToast('กรุณากรอกข้อมูลที่จำเป็น (*)', 'error'); return;
+  }
+  if (endDate < startDate) {
+    showToast('วันกำหนดรับคืนต้องหลังวันปล่อยรถ', 'error'); return;
+  }
+
+  let rental;
+  if (editingId) {
+    const idx = rentals.findIndex(r => r.id === editingId);
+    if (idx !== -1) {
+      rental = { ...rentals[idx],
+        company, forklift, sales, startDate, endDate, location,
+        contact: document.getElementById('f-contact').value,
+        phone: document.getElementById('f-phone').value,
+        type: document.getElementById('f-type').value,
+        truckDeliver: document.getElementById('f-truck-deliver').value,
+        truckReturn: document.getElementById('f-truck-return').value,
+        note: document.getElementById('f-note').value,
+      };
+      rentals[idx] = rental;
+    }
+  } else {
+    rental = {
+      id: genId(), company, forklift, sales, startDate, endDate, location,
+      contact: document.getElementById('f-contact').value,
+      phone: document.getElementById('f-phone').value,
+      type: document.getElementById('f-type').value,
+      truckDeliver: document.getElementById('f-truck-deliver').value,
+      truckReturn: document.getElementById('f-truck-return').value,
+      note: document.getElementById('f-note').value,
+      status: 'active', returnDate: null, returnTruck: '', returnNote: '',
+      createdAt: new Date().toISOString().split('T')[0]
+    };
+    rentals.unshift(rental);
+  }
+
+  closeModal('modal-add');
+  refreshAll();
+
+  try {
+    showLoading('กำลังบันทึก...');
+    await apiPost({ action: 'saveRental', data: rental });
+    showToast(editingId ? '✅ แก้ไขรายการสำเร็จ' : '✅ เพิ่มรายการเช่าใหม่สำเร็จ', 'success');
+  } catch(err) {
+    showToast('❌ บันทึกไม่สำเร็จ: ' + err.message, 'error');
+  } finally {
+    hideLoading();
+  }
+}
+
+// ========== DETAIL MODAL ==========
+function openDetail(id) {
+  const r = rentals.find(x => x.id === id);
+  if (!r) return;
+  const st = getStatus(r);
+  const diff = daysDiff(r.endDate);
+
+  document.getElementById('detail-title').textContent = r.company;
+  document.getElementById('detail-id').textContent = r.id;
+  document.getElementById('detail-status-badge').innerHTML = statusLabel(st);
+
+  const body = document.getElementById('detail-body');
+  body.innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-section">
+        <h4>📋 ข้อมูลการเช่า</h4>
+        <div class="detail-row"><span class="dk">รหัสรายการ</span><span class="dv mono text-muted">${r.id}</span></div>
+        <div class="detail-row"><span class="dk">บริษัทลูกค้า</span><span class="dv">${r.company}</span></div>
+        <div class="detail-row"><span class="dk">ผู้ติดต่อ</span><span class="dv">${r.contact || '-'}</span></div>
+        <div class="detail-row"><span class="dk">เบอร์โทร</span><span class="dv mono">${r.phone || '-'}</span></div>
+        <div class="detail-row"><span class="dk">เซลล์เจ้าของงาน</span><span class="dv text-accent">${r.sales || '-'}</span></div>
+        <div class="detail-row"><span class="dk">ประเภทเช่า</span><span class="dv">${r.type === 'daily' ? '🗓️ รายวัน' : r.type === 'yearly' ? '📆 รายปี' : '📅 รายเดือน'}</span></div>
+      </div>
+      <div class="detail-section">
+        <h4>🚜 ข้อมูลรถ & วันที่</h4>
+        <div class="detail-row"><span class="dk">เบอร์รถโฟร์คลิฟท์</span><span class="dv mono text-accent">${r.forklift}</span></div>
+        <div class="detail-row"><span class="dk">วันที่ปล่อยรถ</span><span class="dv mono">${fmtDateFull(r.startDate)}</span></div>
+        <div class="detail-row"><span class="dk">วันกำหนดรับคืน</span><span class="dv mono">${fmtDateFull(r.endDate)}</span></div>
+        ${st !== 'returned' ? `<div class="detail-row"><span class="dk">สถานะ</span><span class="dv">${diff < 0 ? `เกิน ${Math.abs(diff)} วัน` : diff === 0 ? 'ครบกำหนดวันนี้!' : `อีก ${diff} วัน`}</span></div>${isSunday(r.endDate) ? '<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:8px 12px;margin-top:8px;font-size:0.8rem;color:var(--danger);font-weight:700;">🔴 วันกำหนดคืนตรงกับวันอาทิตย์ — กรุณาตรวจสอบตารางขนส่ง</div>' : ''}` : `<div class="detail-row"><span class="dk">วันรับจริง</span><span class="dv mono text-green">${fmtDateFull(r.returnDate)}</span></div>`}
+      </div>
+      <div class="detail-section">
+        <h4>📍 โลเคชั่น & ขนส่ง</h4>
+        <div class="detail-row"><span class="dk">หน้างาน/โลเคชั่น</span><span class="dv">${r.location}</span></div>
+        <div class="detail-row"><span class="dk">รถขนส่งไปส่ง</span><span class="dv">${r.truckDeliver || '-'}</span></div>
+        <div class="detail-row"><span class="dk">รถขนส่งรับคืน</span><span class="dv">${r.truckReturn || '-'}</span></div>
+        ${r.returnTruck ? `<div class="detail-row"><span class="dk">รถที่ไปรับจริง</span><span class="dv text-green">${r.returnTruck}</span></div>` : ''}
+      </div>
+      <div class="detail-section">
+        <h4>📝 หมายเหตุ</h4>
+        <div style="font-size:0.85rem; color:var(--text-muted); line-height:1.6;">${r.note || 'ไม่มีหมายเหตุ'}</div>
+        ${r.returnNote ? `<div style="margin-top:10px; font-size:0.78rem; color:var(--text-dim);">หมายเหตุรับคืน: ${r.returnNote}</div>` : ''}
+      </div>
+    </div>`;
+
+  const footer = document.getElementById('detail-footer');
+  if (st !== 'returned') {
+    footer.innerHTML = `
+      <button class="btn btn-secondary" onclick="openEdit('${r.id}')">✏️ แก้ไข</button>
+      <button class="btn btn-success" onclick="openReturn('${r.id}'); closeModal('modal-detail')">✅ บันทึกรับคืน</button>
+      <button class="btn btn-danger" onclick="deleteRental('${r.id}'); closeModal('modal-detail')">🗑️ ลบ</button>`;
+  } else {
+    footer.innerHTML = `<button class="btn btn-secondary" onclick="openEdit('${r.id}')">✏️ แก้ไข</button>`;
+  }
+
+  document.getElementById('modal-detail').classList.add('open');
+}
+
+// ========== RETURN ==========
+function openReturn(id) {
+  returningId = id;
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('return-date').value = today;
+  document.getElementById('return-truck').value = rentals.find(r => r.id === id)?.truckReturn || '';
+  document.getElementById('return-note').value = '';
+  document.getElementById('modal-return').classList.add('open');
+}
+
+async function confirmReturn() {
+  const date = document.getElementById('return-date').value;
+  if (!date) { showToast('กรุณาเลือกวันที่รับคืน', 'error'); return; }
+  const idx = rentals.findIndex(r => r.id === returningId);
+  if (idx !== -1) {
+    rentals[idx].status = 'returned';
+    rentals[idx].returnDate = date;
+    rentals[idx].returnTruck = document.getElementById('return-truck').value;
+    rentals[idx].returnNote = document.getElementById('return-note').value;
+    const updated = rentals[idx];
+    closeModal('modal-return');
+    refreshAll();
+    try {
+      showLoading('กำลังบันทึกการรับคืน...');
+      await apiPost({ action: 'saveRental', data: updated });
+      showToast('✅ บันทึกรับรถคืนสำเร็จ', 'success');
+    } catch(err) {
+      showToast('❌ บันทึกไม่สำเร็จ: ' + err.message, 'error');
+    } finally {
+      hideLoading();
+    }
+  }
+}
+
+// ========== DELETE ==========
+async function deleteRental(id) {
+  if (!confirm('ยืนยันการลบรายการนี้?')) return;
+  rentals = rentals.filter(r => r.id !== id);
+  refreshAll();
+  try {
+    showLoading('กำลังลบ...');
+    await apiPost({ action: 'deleteRental', id });
+    showToast('🗑️ ลบรายการแล้ว', 'warning');
+  } catch(err) {
+    showToast('❌ ลบไม่สำเร็จ: ' + err.message, 'error');
+  } finally {
+    hideLoading();
+  }
+}
+
+// ========== MODAL CLOSE ==========
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ========== EXPORT ==========
+function exportCSV() {
+  const headers = ['รหัส','บริษัทลูกค้า','ผู้ติดต่อ','เบอร์โทร','เบอร์รถโฟร์คลิฟท์','เซลล์เจ้าของงาน','ประเภท','วันปล่อย','วันกำหนดคืน','โลเคชั่น','รถส่ง','รถรับ','สถานะ','หมายเหตุ'];
+  const rows = rentals.filter(r => r.status !== 'returned').map(r => [
+    r.id, r.company, r.contact, r.phone, r.forklift, r.sales || '',
+    r.type === 'daily' ? 'รายวัน' : r.type === 'yearly' ? 'รายปี' : 'รายเดือน',
+    r.startDate, r.endDate, r.location,
+    r.truckDeliver, r.truckReturn, getStatus(r), r.note
+  ]);
+  downloadCSV([headers, ...rows], 'forklift-rentals.csv');
+}
+
+function exportMonthlyCSV() {
+  const month = parseInt(document.getElementById('monthly-month').value);
+  const year = parseInt(document.getElementById('monthly-year').value);
+  const filtered = rentals.filter(r => {
+    const s = new Date(r.startDate), e = new Date(r.endDate);
+    const first = new Date(year, month-1, 1), last = new Date(year, month, 0);
+    return s <= last && e >= first;
+  });
+  const headers = ['รหัส','บริษัท','เบอร์รถโฟร์คลิฟท์','เซลล์','ประเภท','วันปล่อย','วันกำหนดคืน','วันรับจริง','โลเคชั่น','สถานะ'];
+  const rows = filtered.map(r => [r.id, r.company, r.forklift, r.sales||'', r.type === 'daily' ? 'รายวัน' : r.type === 'yearly' ? 'รายปี' : 'รายเดือน', r.startDate, r.endDate, r.returnDate || '', r.location, getStatus(r)]);
+  downloadCSV([headers, ...rows], `monthly-${year}-${month}.csv`);
+}
+
+function downloadCSV(rows, filename) {
+  const bom = '\uFEFF';
+  const csv = bom + rows.map(r => r.map(c => `"${(c||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+// ========== TOAST ==========
+function showToast(msg, type = 'success') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${type === 'success' ? '✅' : type === 'warning' ? '⚠️' : '❌'}</span> ${msg}`;
+  c.appendChild(t);
+  setTimeout(() => { t.style.animation = 'toastOut 0.3s ease forwards'; setTimeout(() => t.remove(), 300); }, 3000);
+}
+
+// ========== REFRESH ALL ==========
+function refreshAll() {
+  renderDashboard();
+  populateSalesFilter();
+  if (document.getElementById('sec-rentals').classList.contains('active')) renderRentals();
+  if (document.getElementById('sec-forklift').classList.contains('active')) renderForklift();
+  if (document.getElementById('sec-notifications').classList.contains('active')) renderNotifications();
+  if (document.getElementById('sec-monthly').classList.contains('active')) renderMonthly();
+  if (document.getElementById('sec-history').classList.contains('active')) renderHistory();
+  if (document.getElementById('sec-stock').classList.contains('active')) renderStock();
+}
+
+// ========== FORKLIFT TRACKER ==========
+let fklFilter = 'all';
+
+function setFklFilter(val) {
+  fklFilter = val;
+  document.querySelectorAll('.fkl-chip').forEach(c => c.classList.remove('active'));
+  document.getElementById('chip-' + (val === 'due-soon' ? 'duesoon' : val)).classList.add('active');
+  renderForklift();
+}
+
+function getForkliftCurrentStatus(forklift) {
+  // Find the most recent active rental for this forklift
+  const active = rentals.filter(r => r.forklift === forklift && r.status !== 'returned');
+  if (active.length > 0) {
+    // Pick the one with the latest endDate
+    active.sort((a, b) => b.endDate > a.endDate ? 1 : -1);
+    return { state: getStatus(active[0]), rental: active[0] };
+  }
+  return { state: 'free', rental: null };
+}
+
+function renderForklift() {
+  const search = (document.getElementById('fkl-search').value || '').toLowerCase();
+  const sortBy = document.getElementById('fkl-sort').value;
+
+  // Gather all unique forklift numbers
+  let forklifts = [...new Set(rentals.map(r => r.forklift))];
+
+  // Build data per forklift
+  let fklData = forklifts.map(f => {
+    const { state, rental } = getForkliftCurrentStatus(f);
+    const history = rentals.filter(r => r.forklift === f && r.status === 'returned')
+                           .sort((a, b) => b.returnDate > a.returnDate ? 1 : -1);
+    const allRentals = rentals.filter(r => r.forklift === f);
+    return { forklift: f, state, rental, history, total: allRentals.length };
+  });
+
+  // Update chip counts
+  const counts = { all: fklData.length, active: 0, 'due-soon': 0, overdue: 0, free: 0 };
+  fklData.forEach(d => { counts[d.state] = (counts[d.state] || 0) + 1; });
+  document.getElementById('chip-all-n').textContent = counts.all;
+  document.getElementById('chip-active-n').textContent = (counts.active || 0) + (counts['due-soon'] || 0) + (counts.overdue || 0);
+  document.getElementById('chip-duesoon-n').textContent = counts['due-soon'] || 0;
+  document.getElementById('chip-overdue-n').textContent = counts.overdue || 0;
+
+  // Filter
+  if (search) {
+    fklData = fklData.filter(d => {
+      const r = d.rental;
+      const base = d.forklift.toLowerCase();
+      const loc = r ? r.location.toLowerCase() : '';
+      const co = r ? r.company.toLowerCase() : '';
+      return base.includes(search) || loc.includes(search) || co.includes(search);
+    });
+  }
+  if (fklFilter === 'active') fklData = fklData.filter(d => d.state === 'active' || d.state === 'due-soon' || d.state === 'overdue');
+  if (fklFilter === 'due-soon') fklData = fklData.filter(d => d.state === 'due-soon');
+  if (fklFilter === 'overdue') fklData = fklData.filter(d => d.state === 'overdue');
+
+  // Sort
+  if (sortBy === 'number') fklData.sort((a, b) => a.forklift.localeCompare(b.forklift, 'th'));
+  if (sortBy === 'status') {
+    const o = { overdue: 0, 'due-soon': 1, active: 2, free: 3 };
+    fklData.sort((a, b) => (o[a.state] || 4) - (o[b.state] || 4));
+  }
+  if (sortBy === 'endDate') {
+    fklData.sort((a, b) => {
+      if (!a.rental) return 1;
+      if (!b.rental) return -1;
+      return a.rental.endDate > b.rental.endDate ? 1 : -1;
+    });
+  }
+
+  const grid = document.getElementById('fkl-grid');
+  const empty = document.getElementById('fkl-empty');
+
+  if (fklData.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  grid.innerHTML = fklData.map(d => {
+    const { forklift, state, rental: r, history, total } = d;
+    const stateMap = {
+      free:     { label: '✅ ว่าง / คืนแล้ว', cls: 'fkl-free',     cardCls: 'fkl-free-card',    badgeCls: 'fkl-free' },
+      active:   { label: '🔵 กำลังให้เช่า',   cls: 'fkl-active',   cardCls: 'fkl-active-card',   badgeCls: '' },
+      'due-soon':{ label: '⏰ ครบกำหนดพรุ่งนี้', cls: 'fkl-due',   cardCls: 'fkl-due-card',      badgeCls: 'fkl-due-soon' },
+      overdue:  { label: '🚨 เกินกำหนดคืน',   cls: 'fkl-overdue', cardCls: 'fkl-overdue-card',  badgeCls: 'fkl-overdue' },
+    };
+    const sm = stateMap[state] || stateMap.free;
+    const diff = r ? daysDiff(r.endDate) : null;
+    const diffLabel = diff === null ? '' :
+      diff < 0 ? `<span style="color:var(--danger);font-weight:700;">เกิน ${Math.abs(diff)} วัน</span>` :
+      diff === 0 ? `<span style="color:var(--warning);font-weight:700;">ครบกำหนดวันนี้!</span>` :
+      diff === 1 ? `<span style="color:var(--warning);font-weight:700;">ครบพรุ่งนี้!</span>` :
+      `<span style="color:var(--text-muted);">อีก ${diff} วัน</span>`;
+
+    const lastHist = history[0];
+    const histRows = history.slice(0, 2).map(h =>
+      `<div class="fkl-hist-item">
+        <span>${h.company}</span>
+        <span style="color:var(--text-dim);font-family:'IBM Plex Mono',monospace;">${fmtDate(h.returnDate)}</span>
+      </div>`
+    ).join('');
+
+    return `<div class="fkl-card ${sm.cardCls}" onclick="openFklDetail('${forklift}')">
+      <div class="fkl-card-head">
+        <div class="fkl-num-badge ${sm.badgeCls}">${forklift}</div>
+        <div class="fkl-card-title">
+          <div class="fkl-status-txt">${sm.label}</div>
+          <div class="fkl-usage">ประวัติเช่าทั้งหมด ${total} ครั้ง</div>
+        </div>
+      </div>
+      <div class="fkl-card-body">
+        ${r ? `
+          <div class="fkl-row"><span class="fkl-icon">🏢</span><span class="fkl-key">ลูกค้า</span><span class="fkl-val fw-bold">${r.company}</span></div>
+          <div class="fkl-row"><span class="fkl-icon">📍</span><span class="fkl-key">โลเคชั่น</span><span class="fkl-val">${r.location}</span></div>
+          <div class="fkl-row"><span class="fkl-icon">📅</span><span class="fkl-key">ปล่อยวันที่</span><span class="fkl-val mono" style="font-size:0.8rem;">${fmtDate(r.startDate)}${sundayWarning(r.startDate)}</span></div>
+          <div class="fkl-row"><span class="fkl-icon">🔁</span><span class="fkl-key">กำหนดคืน</span><span class="fkl-val"><span style="font-size:0.8rem;font-family:'IBM Plex Mono',monospace;">${fmtDate(r.endDate)}</span>${sundayWarning(r.endDate)} ${diffLabel}</span></div>
+          <div class="fkl-row"><span class="fkl-icon">🚛</span><span class="fkl-key">รถขนส่ง</span><span class="fkl-val" style="font-size:0.78rem;">${r.truckReturn || r.truckDeliver || '-'}</span></div>
+          ${r.sales ? `<div class="fkl-row"><span class="fkl-icon">👤</span><span class="fkl-key">เซลล์</span><span class="fkl-val">${r.sales}</span></div>` : ''}
+          ${isSunday(r.endDate) ? `<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:6px;padding:7px 10px;font-size:0.76rem;color:var(--danger);font-weight:700;margin-top:8px;">🔴 กำหนดคืนตรงวันอาทิตย์ — ตรวจสอบตารางขนส่ง</div>` : ''}
+        ` : `
+          <div style="text-align:center;padding:12px 0;color:var(--text-dim);font-size:0.85rem;">
+            🟢 รถว่าง — ไม่มีการเช่าในขณะนี้
+          </div>
+          ${lastHist ? `<div class="fkl-row"><span class="fkl-icon">🏢</span><span class="fkl-key">เช่าล่าสุด</span><span class="fkl-val">${lastHist.company}</span></div>
+          <div class="fkl-row"><span class="fkl-icon">📍</span><span class="fkl-key">โลเคชั่น</span><span class="fkl-val">${lastHist.location}</span></div>
+          <div class="fkl-row"><span class="fkl-icon">✅</span><span class="fkl-key">คืนวันที่</span><span class="fkl-val mono" style="font-size:0.8rem;">${fmtDate(lastHist.returnDate)}</span></div>` : ''}
+        `}
+        ${history.length > 0 ? `<div class="fkl-hist-list" style="margin-top:10px;"><div style="font-size:0.7rem;color:var(--text-dim);margin-bottom:4px;letter-spacing:0.5px;">ประวัติการเช่าล่าสุด</div>${histRows}</div>` : ''}
+      </div>
+      <div class="fkl-card-foot">
+        <span class="fkl-hist-count">📁 ${history.length} ครั้งที่คืนแล้ว</span>
+        <span style="color:var(--text-dim);font-size:0.72rem;">${typeLabel(r ? r.type : (lastHist ? lastHist.type : 'daily'))}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openFklDetail(forklift) {
+  const { state, rental: r } = getForkliftCurrentStatus(forklift);
+  const history = rentals.filter(x => x.forklift === forklift && x.status === 'returned')
+                         .sort((a, b) => b.returnDate > a.returnDate ? 1 : -1);
+  const stateMap = {
+    free:     'returned',
+    active:   'active',
+    'due-soon': 'due-soon',
+    overdue:  'overdue',
+  };
+
+  document.getElementById('detail-title').textContent = `🚜 เบอร์รถ: ${forklift}`;
+  document.getElementById('detail-id').textContent = `ประวัติทั้งหมด ${rentals.filter(x=>x.forklift===forklift).length} รายการ`;
+  document.getElementById('detail-status-badge').innerHTML = r ? statusLabel(state) : '<span class="badge-status s-returned">ว่าง</span>';
+
+  const histHTML = history.length > 0
+    ? history.map(h => `<div class="fkl-hist-item" style="margin-bottom:6px;background:var(--surface2);border-radius:8px;padding:10px 14px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span class="fw-bold" style="font-size:0.88rem;">${h.company}</span>
+          <span style="font-size:0.75rem;color:var(--text-muted);">${typeLabel(h.type)}</span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-muted);">📍 ${h.location}</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:3px;">ปล่อย ${fmtDate(h.startDate)} → คืน ${fmtDate(h.returnDate)}</div>
+      </div>`).join('')
+    : '<div style="color:var(--text-dim);font-size:0.85rem;">ยังไม่มีประวัติการคืนรถ</div>';
+
+  document.getElementById('detail-body').innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-section">
+        <h4>📍 สถานะปัจจุบัน</h4>
+        ${r ? `
+          <div class="detail-row"><span class="dk">บริษัทลูกค้า</span><span class="dv fw-bold">${r.company}</span></div>
+          <div class="detail-row"><span class="dk">โลเคชั่น</span><span class="dv">${r.location}</span></div>
+          <div class="detail-row"><span class="dk">ปล่อยวันที่</span><span class="dv mono">${fmtDateFull(r.startDate)}</span></div>
+          <div class="detail-row"><span class="dk">กำหนดคืน</span><span class="dv mono">${fmtDateFull(r.endDate)}</span></div>
+          <div class="detail-row"><span class="dk">ประเภทเช่า</span><span class="dv">${r.type === 'daily' ? 'รายวัน' : r.type === 'yearly' ? 'รายปี' : 'รายเดือน'}</span></div>
+          <div class="detail-row"><span class="dk">เซลล์</span><span class="dv">${r.sales || '-'}</span></div>
+          <div class="detail-row"><span class="dk">รถขนส่ง</span><span class="dv">${r.truckReturn || r.truckDeliver || '-'}</span></div>
+          ${isSunday(r.endDate) ? `<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:10px;font-size:0.82rem;color:var(--danger);font-weight:700;margin-top:10px;">🔴 วันกำหนดคืนตรงกับวันอาทิตย์ — กรุณาตรวจสอบตารางขนส่ง</div>` : ''}
+        ` : `<div style="text-align:center;padding:20px 0;color:var(--accent3);font-size:0.95rem;font-weight:700;">✅ รถว่าง — ไม่มีการเช่าในขณะนี้</div>`}
+      </div>
+      <div class="detail-section">
+        <h4>📁 ประวัติการเช่า (${history.length} ครั้ง)</h4>
+        ${histHTML}
+      </div>
+    </div>`;
+
+  document.getElementById('detail-footer').innerHTML = r
+    ? `<button class="btn btn-success" onclick="openReturn('${r.id}'); closeModal('modal-detail')">✅ บันทึกรับคืน</button>
+       <button class="btn btn-secondary" onclick="openEdit('${r.id}'); closeModal('modal-detail')">✏️ แก้ไข</button>`
+    : '';
+
+  document.getElementById('modal-detail').classList.add('open');
+}
+
+function populateSalesFilter() {
+  const sel = document.getElementById('filter-sales');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">ทุกเซลล์</option>' +
+    salesList.map(s => `<option value="${s}" ${s === cur ? 'selected' : ''}>${s}</option>`).join('');
+}
+
+
+let salesList = [];
+
+async function saveSalesRemote() {
+  try {
+    await apiPost({ action: 'saveSales', data: salesList });
+  } catch(err) {
+    showToast('❌ บันทึกรายชื่อเซลล์ไม่สำเร็จ: ' + err.message, 'error');
+  }
+  populateSalesFilter();
+}
+
+function populateSalesDropdown() {
+  const sel = document.getElementById('f-sales');
+  const currentVal = sel.value;
+  sel.innerHTML = '<option value="">-- เลือกเซลล์ --</option>' +
+    salesList.map(s => `<option value="${s}" ${s === currentVal ? 'selected' : ''}>${s}</option>`).join('') +
+    '<option value="__manage__">⚙️ จัดการรายชื่อเซลล์...</option>';
+}
+
+function handleSalesSelect() {
+  const sel = document.getElementById('f-sales');
+  if (sel.value === '__manage__') {
+    sel.value = '';
+    openManageSales();
+  }
+}
+
+function openManageSales() {
+  document.getElementById('manage-sales-list').innerHTML = salesList.map((s, i) =>
+    `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
+      <span style="flex:1;font-size:0.88rem;">${s}</span>
+      <button class="btn btn-sm btn-danger" onclick="deleteSales(${i})">🗑️</button>
+    </div>`
+  ).join('');
+  document.getElementById('modal-sales').classList.add('open');
+}
+
+async function deleteSales(idx) {
+  salesList.splice(idx, 1);
+  populateSalesDropdown();
+  openManageSales();
+  await saveSalesRemote();
+}
+
+async function addNewSales() {
+  const val = document.getElementById('new-sales-input').value.trim();
+  if (!val) return;
+  if (salesList.includes(val)) { showToast('มีชื่อนี้แล้ว', 'warning'); return; }
+  salesList.push(val);
+  populateSalesDropdown();
+  document.getElementById('new-sales-input').value = '';
+  openManageSales();
+  await saveSalesRemote();
+  showToast('✅ เพิ่มชื่อเซลล์แล้ว', 'success');
+}
+
+// ========== DATE VIEW ==========
+const thaiMonths = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const thaiDays   = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
+
+function dvSetToday() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('dv-date').value = today;
+  renderDateView();
+}
+
+function renderDateView() {
+  const dateVal = document.getElementById('dv-date').value;
+  const placeholder = document.getElementById('dv-placeholder');
+  const empty = document.getElementById('dv-empty');
+  const content = document.getElementById('dv-content');
+  const summary = document.getElementById('dv-summary');
+  const label = document.getElementById('dv-date-label');
+  const dayBadge = document.getElementById('dv-day-badge');
+
+  if (!dateVal) {
+    placeholder.style.display = 'block';
+    empty.style.display = 'none';
+    content.innerHTML = '';
+    summary.style.display = 'none';
+    label.textContent = 'เลือกวันที่เพื่อดูงาน';
+    dayBadge.textContent = '';
+    return;
+  }
+  placeholder.style.display = 'none';
+
+  // แสดงวันที่แบบไทย
+  const d = new Date(dateVal + 'T00:00:00');
+  const buddhistYear = d.getFullYear() + 543;
+  const dayName = thaiDays[d.getDay()];
+  const isSun = d.getDay() === 0;
+  label.textContent = `วัน${dayName}ที่ ${d.getDate()} ${thaiMonths[d.getMonth()+1]} ${buddhistYear}`;
+  dayBadge.textContent = isSun ? '🔴 วันอาทิตย์' : `วัน${dayName}`;
+  dayBadge.className = 'dv-day-badge' + (isSun ? ' sunday' : '');
+
+  // จำแนกรายการตาม event ในวันนั้น
+  const delivering = []; // ปล่อยรถวันนี้
+  const returning  = []; // กำหนดคืนวันนี้
+  const returning_actual = []; // คืนจริงวันนี้
+  const active     = []; // อยู่ในช่วงเช่า (ไม่ใช่วันแรก/วันสุดท้าย)
+
+  rentals.forEach(r => {
+    const isDeliver = r.startDate === dateVal;
+    const isReturn  = r.endDate === dateVal && r.status !== 'returned';
+    const isActualReturn = r.returnDate === dateVal;
+    const isActive  = r.startDate < dateVal && r.endDate > dateVal && r.status !== 'returned';
+
+    if (isDeliver)       delivering.push(r);
+    else if (isReturn)   returning.push(r);
+    else if (isActive)   active.push(r);
+    if (isActualReturn)  returning_actual.push(r);
+  });
+
+  const total = delivering.length + returning.length + active.length + returning_actual.length;
+
+  if (total === 0) {
+    empty.style.display = 'block';
+    content.innerHTML = '';
+    summary.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+
+  // Summary cards
+  summary.style.display = 'flex';
+  summary.innerHTML = `
+    <div class="dv-sum-card deliver">
+      <div class="dv-sum-val" style="color:var(--accent)">${delivering.length}</div>
+      <div class="dv-sum-lbl">🚛 ปล่อยรถวันนี้</div>
+    </div>
+    <div class="dv-sum-card ret">
+      <div class="dv-sum-val" style="color:var(--accent3)">${returning.length}</div>
+      <div class="dv-sum-lbl">🔁 กำหนดคืนวันนี้</div>
+    </div>
+    ${returning_actual.length ? `<div class="dv-sum-card ret">
+      <div class="dv-sum-val" style="color:var(--accent3)">${returning_actual.length}</div>
+      <div class="dv-sum-lbl">✅ คืนจริงวันนี้</div>
+    </div>` : ''}
+    <div class="dv-sum-card active">
+      <div class="dv-sum-val" style="color:var(--accent2)">${active.length}</div>
+      <div class="dv-sum-lbl">📍 อยู่ในช่วงเช่า</div>
+    </div>
+    <div class="dv-sum-card overlap">
+      <div class="dv-sum-val" style="color:#a78bfa">${total}</div>
+      <div class="dv-sum-lbl">รวมทั้งหมด</div>
+    </div>
+    ${isSun ? `<div class="dv-sum-card" style="border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.06);">
+      <div class="dv-sum-val" style="color:var(--danger)">🔴</div>
+      <div class="dv-sum-lbl" style="color:var(--danger)">วันอาทิตย์</div>
+    </div>` : ''}
+  `;
+
+  // Card builder
+  const makeCard = (r, type) => {
+    const st = getStatus(r);
+    const diff = daysDiff(r.endDate);
+    const diffLabel = st === 'overdue'   ? `<span style="color:var(--danger);font-size:0.76rem;font-weight:700;">เกิน ${Math.abs(diff)} วัน</span>` :
+                      st === 'due-soon'  ? `<span style="color:var(--warning);font-size:0.76rem;font-weight:700;">ครบกำหนดวันนี้/พรุ่งนี้</span>` : '';
+    const icons = { deliver:'🚛', return:'🔁', actual_return:'✅', active:'📍' };
+    const tags  = {
+      deliver:       `<span class="dv-tag dv-tag-deliver">ปล่อยรถวันนี้</span>`,
+      return:        `<span class="dv-tag dv-tag-return">กำหนดคืนวันนี้</span>`,
+      actual_return: `<span class="dv-tag dv-tag-return">คืนจริงวันนี้</span>`,
+      active:        `<span class="dv-tag dv-tag-active">อยู่ในช่วงเช่า</span>`,
+    };
+    const sunWarn = (type === 'deliver' && isSun) || (type === 'return' && isSun)
+      ? `<span style="color:var(--danger);font-size:0.75rem;font-weight:700;">🔴 ตรวจสอบตารางขนส่ง</span>` : '';
+
+    return `<div class="dv-card dv-${type === 'actual_return' ? 'return' : type}${isSun && (type==='deliver'||type==='return') ? ' dv-sunday' : ''}" onclick="openDetail('${r.id}')">
+      <div class="dv-card-icon">${icons[type]}</div>
+      <div class="dv-card-body">
+        <div class="dv-card-company">${r.company} ${tags[type]} ${typeLabel(r.type)}</div>
+        <div class="dv-card-row">
+          <span>🚜 ${r.forklift}</span>
+          <span>📍 ${r.location}</span>
+          ${r.sales ? `<span>👤 ${r.sales}</span>` : ''}
+        </div>
+        <div class="dv-card-row" style="margin-top:4px;">
+          <span>ปล่อย <strong>${fmtDate(r.startDate)}</strong></span>
+          <span>→ กำหนดคืน <strong>${fmtDate(r.endDate)}</strong></span>
+          ${diffLabel}
+        </div>
+        ${type === 'deliver' || type === 'return' ? `<div class="dv-card-row" style="margin-top:4px;">
+          <span>🚛 ${type==='deliver' ? (r.truckDeliver||'-') : (r.truckReturn||r.truckDeliver||'-')}</span>
+          ${sunWarn}
+        </div>` : ''}
+        ${type === 'actual_return' ? `<div class="dv-card-row" style="margin-top:4px;">
+          <span>✅ คืนจริง: <strong>${fmtDate(r.returnDate)}</strong></span>
+          <span>🚛 ${r.returnTruck||'-'}</span>
+        </div>` : ''}
+      </div>
+    </div>`;
+  };
+
+  let html = '';
+  if (delivering.length) {
+    html += `<div class="dv-group-title">🚛 ปล่อยรถออก (${delivering.length} คัน)</div>`;
+    html += delivering.map(r => makeCard(r, 'deliver')).join('');
+  }
+  if (returning.length) {
+    html += `<div class="dv-group-title">🔁 กำหนดรับคืน (${returning.length} คัน)</div>`;
+    html += returning.map(r => makeCard(r, 'return')).join('');
+  }
+  if (returning_actual.length) {
+    html += `<div class="dv-group-title">✅ คืนจริงวันนี้ (${returning_actual.length} คัน)</div>`;
+    html += returning_actual.map(r => makeCard(r, 'actual_return')).join('');
+  }
+  if (active.length) {
+    html += `<div class="dv-group-title">📍 อยู่ในช่วงเช่า (${active.length} คัน)</div>`;
+    html += active.map(r => makeCard(r, 'active')).join('');
+  }
+  content.innerHTML = html;
+}
+
+// ========== STOCK ==========
+let stockFleet = [];
+let stockFilterMode = 'all';
+
+// ดึงสถานะจริงจากตารางเช่า (override manual status ถ้ามีการเช่าอยู่)
+function getStockRealStatus(num) {
+  const today = new Date().toISOString().split('T')[0];
+  // ออกเช่าอยู่จริง (startDate ≤ today ≤ endDate)
+  const activeRental = rentals.find(r =>
+    r.forklift === num &&
+    r.status !== 'returned' &&
+    r.startDate <= today &&
+    r.endDate >= today
+  );
+  if (activeRental) return { realStatus: 'busy', rental: activeRental };
+  // จองแล้ว รอส่ง (startDate > today)
+  const planned = rentals.find(r =>
+    r.forklift === num &&
+    r.status !== 'returned' &&
+    r.startDate > today
+  );
+  if (planned) return { realStatus: 'reserved', rental: planned };
+  return { realStatus: null, rental: null };
+}
+
+function setStockFilter(f) {
+  stockFilterMode = f;
+  ['all','free','reserved','busy','maint'].forEach(k => {
+    const el = document.getElementById('sfchip-' + k);
+    if (!el) return;
+    const activeClass = k === 'free' ? ' free' : k === 'busy' ? ' busy' : k === 'reserved' ? ' reserved' : ' active';
+    el.className = 'stock-filter-chip' + (k === f ? activeClass : '');
+  });
+  renderStock();
+}
+
+const fuelLabel = {
+  lpg:           '⛽ LPG',
+  diesel:        '🛢️ ดีเซล',
+  electric_sit:  '⚡ ไฟฟ้านั่งขับ',
+  electric_stand:'⚡ ไฟฟ้ายืนขับ',
+  electric_side: '⚡ ไฟฟ้านั่งข้าง',
+  gasoline:      '⛽ เบนซิน',
+};
+const fuelClass = {
+  lpg:           'sfb-lpg',
+  diesel:        'sfb-diesel',
+  electric_sit:  'sfb-electric',
+  electric_stand:'sfb-electric',
+  electric_side: 'sfb-electric',
+  gasoline:      'sfb-gasoline',
+};
+
+function populateCapFilter() {
+  const caps = [...new Set(stockFleet.map(s => s.cap).filter(Boolean))].sort((a,b) => a-b);
+  const sel = document.getElementById('stock-cap-filter');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">⚖️ ทุกขนาด</option>' +
+    caps.map(c => `<option value="${c}" ${String(c)===cur?'selected':''}>${c} ตัน</option>`).join('');
+}
+
+function clearStockFilters() {
+  document.getElementById('stock-fuel-filter').value   = '';
+  document.getElementById('stock-cap-filter').value    = '';
+  document.getElementById('stock-branch-filter').value = '';
+  document.getElementById('stock-search').value        = '';
+  setStockFilter('all');
+}
+
+function renderStock() {
+  const search  = (document.getElementById('stock-search').value || '').toLowerCase();
+  const fuelF   = document.getElementById('stock-fuel-filter').value;
+  const capF    = document.getElementById('stock-cap-filter').value;
+  const branchF = document.getElementById('stock-branch-filter').value;
+  const grid    = document.getElementById('stock-grid');
+  const empty   = document.getElementById('stock-empty');
+  const sumEl   = document.getElementById('stock-summary');
+
+  populateCapFilter();
+
+  // คำนวณ summary (ใช้สถานะจริงจากเช่า)
+  let cntAll=0, cntFree=0, cntBusy=0, cntMaint=0, cntReserved=0;
+  stockFleet.forEach(s => {
+    cntAll++;
+    const { realStatus } = getStockRealStatus(s.num);
+    const eff = realStatus === 'busy' ? 'busy' : realStatus === 'reserved' ? 'reserved' : s.status;
+    if      (eff === 'free')     cntFree++;
+    else if (eff === 'busy')     cntBusy++;
+    else if (eff === 'reserved') cntReserved++;
+    else if (eff === 'maint')    cntMaint++;
+    else cntFree++;
+  });
+  sumEl.innerHTML = `
+    <div class="stock-sum-card s-all">
+      <div class="sv" style="color:#a78bfa">${cntAll}</div>
+      <div class="sl">รถทั้งหมด</div>
+    </div>
+    <div class="stock-sum-card s-free">
+      <div class="sv" style="color:var(--accent3)">${cntFree}</div>
+      <div class="sl">✅ ว่าง / พร้อมส่ง</div>
+    </div>
+    <div class="stock-sum-card s-reserved">
+      <div class="sv" style="color:#a78bfa">${cntReserved}</div>
+      <div class="sl">🔖 จองแล้ว / รอส่ง</div>
+    </div>
+    <div class="stock-sum-card s-busy">
+      <div class="sv" style="color:var(--danger)">${cntBusy}</div>
+      <div class="sl">🔴 ออกเช่าแล้ว</div>
+    </div>
+    <div class="stock-sum-card s-maint">
+      <div class="sv" style="color:var(--accent)">${cntMaint}</div>
+      <div class="sl">🔧 ซ่อมบำรุง</div>
+    </div>
+  `;
+
+  // กรอง
+  let list = stockFleet.filter(s => {
+    const txt = (s.num + s.model + s.note).toLowerCase();
+    if (search  && !txt.includes(search)) return false;
+    if (fuelF   && s.fuel !== fuelF)      return false;
+    if (capF    && String(s.cap) !== capF) return false;
+    if (branchF && (s.branch || '') !== branchF) return false;
+    const { realStatus } = getStockRealStatus(s.num);
+    const eff = realStatus === 'busy' ? 'busy' : realStatus === 'reserved' ? 'reserved' : s.status;
+    if (stockFilterMode === 'free'     && eff !== 'free')     return false;
+    if (stockFilterMode === 'busy'     && eff !== 'busy')     return false;
+    if (stockFilterMode === 'reserved' && eff !== 'reserved') return false;
+    if (stockFilterMode === 'maint'    && eff !== 'maint')    return false;
+    return true;
+  });
+
+  if (!list.length) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  grid.innerHTML = list.map(s => {
+    const { realStatus, rental } = getStockRealStatus(s.num);
+    const eff = realStatus === 'busy' ? 'busy' : realStatus === 'reserved' ? 'reserved' : s.status;
+    const today = new Date().toISOString().split('T')[0];
+
+    const statusBadge =
+      eff === 'free'     ? '<span class="stock-status-badge ssb-free">✅ ว่าง / พร้อมส่ง</span>' :
+      eff === 'busy'     ? '<span class="stock-status-badge ssb-busy">🔴 ออกเช่าอยู่</span>'     :
+      eff === 'reserved' ? '<span class="stock-status-badge ssb-reserved">🔖 จองแล้ว / รอส่ง</span>' :
+                           '<span class="stock-status-badge ssb-maint">🔧 ซ่อมบำรุง</span>';
+
+    // กรณี busy — แสดงข้อมูลการเช่าปัจจุบัน
+    const rentalInfo = eff === 'busy' && rental ? `
+      <div class="stock-rental-info">
+        <div class="sri-title">📍 ออกเช่าอยู่ที่</div>
+        <div class="sri-row">🏢 ${rental.company}</div>
+        <div class="sri-row">📌 ${rental.location}</div>
+        <div class="sri-row">📅 กำหนดคืน ${fmtDate(rental.endDate)}</div>
+        ${rental.sales ? `<div class="sri-row">👤 ${rental.sales}</div>` : ''}
+      </div>` : '';
+
+    // กรณี reserved — แสดงข้อมูลการจอง
+    const reservedInfo = eff === 'reserved' && rental ? `
+      <div class="stock-rental-info reserved-info">
+        <div class="sri-title">🔖 จองโดย</div>
+        <div class="sri-row">🏢 ${rental.company}</div>
+        <div class="sri-row">📌 ${rental.location}</div>
+        <div class="sri-row">🚛 กำหนดส่ง ${fmtDate(rental.startDate)}</div>
+        <div class="sri-row">📅 สิ้นสุด ${fmtDate(rental.endDate)}</div>
+        ${rental.sales ? `<div class="sri-row">👤 ${rental.sales}</div>` : ''}
+      </div>` : '';
+
+    const maintBtn = eff !== 'busy' && eff !== 'reserved'
+      ? `<button class="btn-xs" onclick="toggleMaint('${s.id}')">${eff === 'maint' ? '✅ เปลี่ยนเป็นว่าง' : '🔧 ส่งซ่อม'}</button>` : '';
+
+    return `<div class="stock-card ${eff}">
+      <div class="stock-card-header">
+        <div>
+          <div class="stock-card-num">${s.num}</div>
+          <div class="stock-card-model">${s.model || '—'}</div>
+        </div>
+        <div class="stock-badge-wrap">
+          ${statusBadge}
+          <span class="stock-fuel-badge ${fuelClass[s.fuel] || 'sfb-lpg'}">${fuelLabel[s.fuel] || s.fuel}</span>
+          ${s.branch ? `<span class="branch-badge">📍 ${s.branch}</span>` : ''}
+        </div>
+      </div>
+      <div class="stock-specs">
+        <div class="stock-spec-item"><span class="sk">⚖️ ยก</span><span class="sv">${s.cap ? s.cap + ' ตัน' : '—'}</span></div>
+        <div class="stock-spec-item"><span class="sk">📐 ยก</span><span class="sv">${s.mast ? s.mast + ' มม.' : '—'}</span></div>
+        ${s.engine ? `<div class="stock-spec-item"><span class="sk">🔩 เครื่อง</span><span class="sv">${s.engine}</span></div>` : ''}
+        ${s.fork   ? `<div class="stock-spec-item"><span class="sk">📏 งา</span><span class="sv">${s.fork} มม.</span></div>` : ''}
+        ${s.tyre ? `<div class="stock-spec-item" style="grid-column:1/-1;"><span class="sk">🔧</span><span class="sv">${s.tyre}</span></div>` : ''}
+      </div>
+      ${s.note ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:6px;">📝 ${s.note}</div>` : ''}
+      ${rentalInfo}${reservedInfo}
+      <div class="stock-card-actions">
+        <button class="btn-xs" onclick="openStockEditModal('${s.id}')">✏️ แก้ไข</button>
+        ${maintBtn}
+        <button class="btn-xs danger" onclick="deleteStockItem('${s.id}')">🗑️ ลบ</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function toggleMaint(id) {
+  const s = stockFleet.find(x => x.id === id);
+  if (!s) return;
+  s.status = s.status === 'maint' ? 'free' : 'maint';
+  renderStock();
+  try {
+    showLoading('กำลังอัพเดทสถานะ...');
+    await apiPost({ action: 'saveStock', data: s });
+  } catch(err) {
+    showToast('❌ อัพเดทไม่สำเร็จ: ' + err.message, 'error');
+  } finally {
+    hideLoading();
+  }
+}
+
+async function deleteStockItem(id) {
+  if (!confirm('ลบรถคันนี้ออกจากสต๊อก?')) return;
+  stockFleet = stockFleet.filter(x => x.id !== id);
+  renderStock();
+  try {
+    showLoading('กำลังลบ...');
+    await apiPost({ action: 'deleteStock', id });
+  } catch(err) {
+    showToast('❌ ลบไม่สำเร็จ: ' + err.message, 'error');
+  } finally {
+    hideLoading();
+  }
+}
+
+function openStockAddModal() {
+  document.getElementById('stock-modal-title').textContent = '➕ เพิ่มรถในสต๊อก';
+  document.getElementById('sf-id').value    = '';
+  document.getElementById('sf-num').value   = '';
+  document.getElementById('sf-model').value = '';
+  document.getElementById('sf-fuel').value  = 'lpg';
+  document.getElementById('sf-cap').value   = '';
+  document.getElementById('sf-tyre').value  = '';
+  document.getElementById('sf-mast').value  = '';
+  document.getElementById('sf-engine').value = '';
+  document.getElementById('sf-fork').value   = '';
+  document.getElementById('sf-status').value = 'free';
+  document.getElementById('sf-branch').value = '';
+  document.getElementById('sf-note').value   = '';
+  document.getElementById('modal-stock').classList.add('open');
+}
+
+function openStockEditModal(id) {
+  const s = stockFleet.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('stock-modal-title').textContent = '✏️ แก้ไขข้อมูลรถ';
+  document.getElementById('sf-id').value    = s.id;
+  document.getElementById('sf-num').value   = s.num;
+  document.getElementById('sf-model').value = s.model || '';
+  document.getElementById('sf-fuel').value  = s.fuel  || 'lpg';
+  document.getElementById('sf-cap').value   = s.cap   || '';
+  document.getElementById('sf-tyre').value  = s.tyre  || '';
+  document.getElementById('sf-mast').value  = s.mast  || '';
+  document.getElementById('sf-engine').value = s.engine || '';
+  document.getElementById('sf-fork').value   = s.fork   || '';
+  document.getElementById('sf-status').value = s.status || 'free';
+  document.getElementById('sf-branch').value = s.branch || '';
+  document.getElementById('sf-note').value   = s.note   || '';
+  document.getElementById('modal-stock').classList.add('open');
+}
+
+async function saveStockItem() {
+  const num = document.getElementById('sf-num').value.trim();
+  if (!num) { alert('กรุณาระบุเบอร์รถ'); return; }
+  const id = document.getElementById('sf-id').value;
+  // เช็คเบอร์รถซ้ำ (ยกเว้นตัวเองกรณีแก้ไข)
+  const duplicate = stockFleet.find(x => x.num === num && x.id !== id);
+  if (duplicate) {
+    alert(`⚠️ เบอร์รถ "${num}" มีในสต๊อกอยู่แล้วค่ะ\nกรุณาตรวจสอบและใช้เบอร์รถที่ไม่ซ้ำกัน`);
+    document.getElementById('sf-num').focus();
+    return;
+  }
+  const item = {
+    id:     id || 'stk' + Date.now(),
+    num,
+    model:  document.getElementById('sf-model').value.trim(),
+    fuel:   document.getElementById('sf-fuel').value,
+    cap:    parseFloat(document.getElementById('sf-cap').value) || 0,
+    tyre:   document.getElementById('sf-tyre').value.trim(),
+    mast:   parseInt(document.getElementById('sf-mast').value) || 0,
+    engine: document.getElementById('sf-engine').value.trim(),
+    fork:   parseInt(document.getElementById('sf-fork').value) || 0,
+    status: document.getElementById('sf-status').value,
+    branch: document.getElementById('sf-branch').value,
+    note:   document.getElementById('sf-note').value.trim(),
+  };
+  if (id) {
+    const idx = stockFleet.findIndex(x => x.id === id);
+    if (idx >= 0) stockFleet[idx] = item;
+  } else {
+    stockFleet.push(item);
+  }
+  populateCapFilter();
+  closeModal('modal-stock');
+  renderStock();
+  try {
+    showLoading('กำลังบันทึกข้อมูลรถ...');
+    await apiPost({ action: 'saveStock', data: item });
+  } catch(err) {
+    showToast('❌ บันทึกไม่สำเร็จ: ' + err.message, 'error');
+  } finally {
+    hideLoading();
+  }
+}
+
+// ========== INIT ==========
+async function initApp() {
+  showLoading('กำลังโหลดข้อมูล...');
+  try {
+    const res = await fetch(API_URL + '?action=getAll', { redirect: 'follow' });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'โหลดข้อมูลไม่สำเร็จ');
+    rentals = (json.data.rentals || []).map(r => ({
+      ...r,
+      startDate:  normalizeDate(r.startDate),
+      endDate:    normalizeDate(r.endDate),
+      returnDate: normalizeDate(r.returnDate),
+      createdAt:  normalizeDate(r.createdAt),
+    }));
+    salesList  = json.data.sales   || [];
+    stockFleet = json.data.stock   || [];
+  } catch(err) {
+    showToast('❌ เชื่อมต่อ Google Sheets ไม่สำเร็จ: ' + err.message, 'error');
+    rentals = []; salesList = []; stockFleet = [];
+  } finally {
+    hideLoading();
+  }
+  populateSalesDropdown();
+  populateSalesFilter();
+  document.getElementById('f-sales').addEventListener('change', handleSalesSelect);
+  populateCapFilter();
+  populateMonthFilter();
+  renderDashboard();
+  renderRentals();
+  setInterval(() => { refreshAll(); }, 60000);
+}
+
+initApp();
+</script>
+<!-- STOCK ADD/EDIT MODAL -->
+<div class="modal-overlay" id="modal-stock">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <div class="modal-title" id="stock-modal-title">➕ เพิ่มรถในสต๊อก</div>
+      <button class="modal-close" onclick="closeModal('modal-stock')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="sf-id">
+      <div class="stock-form-grid">
+        <div class="form-group">
+          <label>เบอร์รถ <span class="req">*</span></label>
+          <input type="text" id="sf-num" placeholder="เช่น FKL-001">
+        </div>
+        <div class="form-group">
+          <label>รุ่น / ยี่ห้อ</label>
+          <input type="text" id="sf-model" placeholder="เช่น HELI CPCD30">
+        </div>
+        <div class="form-group">
+          <label>ประเภทเชื้อเพลิง</label>
+          <select id="sf-fuel">
+            <option value="lpg">⛽ LPG (แก๊ส)</option>
+            <option value="diesel">🛢️ ดีเซล</option>
+            <option value="electric_sit">⚡ ไฟฟ้านั่งขับ</option>
+            <option value="electric_stand">⚡ ไฟฟ้ายืนขับ</option>
+            <option value="electric_side">⚡ ไฟฟ้านั่งข้าง</option>
+            <option value="gasoline">⛽ น้ำมันเบนซิน</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>น้ำหนักยก (ตัน)</label>
+          <input type="number" id="sf-cap" step="0.5" min="0.5" placeholder="เช่น 3">
+        </div>
+        <div class="form-group">
+          <label>อุปกรณ์เสริม</label>
+          <input type="text" id="sf-tyre" placeholder="เช่น Side Shift, Fork Positioner">
+        </div>
+        <div class="form-group">
+          <label>ความสูงยก (มม.)</label>
+          <input type="number" id="sf-mast" placeholder="เช่น 3000">
+        </div>
+        <div class="form-group">
+          <label>รหัสเครื่องยนต์</label>
+          <input type="text" id="sf-engine" placeholder="เช่น S4S, 4Y, AC Motor">
+        </div>
+        <div class="form-group">
+          <label>ความยาวงา (มม.)</label>
+          <input type="number" id="sf-fork" placeholder="เช่น 1070, 1220">
+        </div>
+      </div>
+      <div class="stock-form-grid">
+        <div class="form-group">
+          <label>สถานะเริ่มต้น</label>
+          <select id="sf-status">
+            <option value="free">✅ ว่าง / พร้อมส่ง</option>
+            <option value="maint">🔧 ซ่อมบำรุง</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>สาขา</label>
+          <select id="sf-branch">
+            <option value="">— ไม่ระบุ —</option>
+            <option value="สมุทรปราการ">📍 สมุทรปราการ</option>
+            <option value="ชลบุรี">📍 ชลบุรี</option>
+            <option value="ขอนแก่น">📍 ขอนแก่น</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group mt-1">
+        <label>หมายเหตุ</label>
+        <input type="text" id="sf-note" placeholder="หมายเหตุเพิ่มเติม">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-stock')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveStockItem()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- MANAGE SALES MODAL -->
+<div class="modal-overlay" id="modal-sales">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">👤 จัดการรายชื่อเซลล์</div>
+      <button class="modal-close" onclick="closeModal('modal-sales')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <input type="text" id="new-sales-input" placeholder="ชื่อเซลล์ใหม่..." style="flex:1;" onkeydown="if(event.key==='Enter') addNewSales()">
+        <button class="btn btn-primary" onclick="addNewSales()">➕ เพิ่ม</button>
+      </div>
+      <div id="manage-sales-list"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-sales')">ปิด</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
