@@ -1344,19 +1344,30 @@ const MONTHS_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.',
 const DAYS_TH = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
 
 // Normalize date จาก Google Sheets (อาจเป็น ISO string, Date object, หรือ number)
+// Normalize date จาก Google Sheets ให้แสดงผลถูกต้อง
 function normalizeDate(d) {
-  if (!d || d === 'null') return null;
-  if (typeof d === 'number') {
-    // Google Sheets serial number หรือ epoch ms
-    const dt = d > 1e10 ? new Date(d) : new Date((d - 25569) * 86400000);
-    return dt.toISOString().split('T')[0];
+  if (!d || d === 'null' || d === '') return null;
+  
+  let s = String(d);
+  
+  // 1. ตัดข้อความในวงเล็บข้างท้ายออก เช่น "(เวลาอินโดจีน)" เบราว์เซอร์จะได้ไม่งง
+  s = s.replace(/\s*\(.*?\)\s*$/, '').trim();
+
+  // 2. ถ้าเป็นรูปแบบ YYYY-MM-DD อยู่แล้ว (เช่นเพิ่งกรอกใหม่) ให้ใช้ได้เลย
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+  // 3. ถ้าเป็นแบบอื่น ให้แปลงเป็น Date Object
+  const dt = new Date(s);
+  if (!isNaN(dt.getTime())) {
+    // ใช้คำสั่งดึง ปี-เดือน-วัน ออกมาตรงๆ เพื่อป้องกันปัญหาวันที่แสดงผลย้อนหลัง 1 วัน (Timezone offset)
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
-  const s = String(d);
-  if (s.includes('T')) return s.split('T')[0];           // "2025-03-11T00:00:00.000Z"
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;          // "YYYY-MM-DD" ถูกอยู่แล้ว
-  const dt2 = new Date(s);
-  if (!isNaN(dt2)) return dt2.toISOString().split('T')[0];
-  return s;
+  
+  // กรณีสุดท้าย ถ้าแปลงไม่ได้จริงๆ ให้คืนค่าเดิมกลับไป
+  return s.split('T')[0];
 }
 
 function fmtDate(d) {
